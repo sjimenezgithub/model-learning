@@ -113,6 +113,10 @@ MAX_STEPS = get_max_steps(plans)
 MAX_VARS = get_max_vars(plans)
 
 # Compilation Problem
+for a in actions:
+   fd_task.init.append(pddl.conditions.Atom("header-"+a[0],["var"+str(i) for i in range(1,len(a))]))
+
+
 fd_task.init.append(pddl.conditions.Atom("programming",[]))
 if input_level <= INPUT_STEPS:               
    fd_task.init.append(pddl.conditions.Atom("current",["i1"])) 
@@ -195,17 +199,10 @@ for a in actions:
             disjunction = pddl.conditions.Disjunction([pddl.conditions.NegatedAtom("pre_"+p[0]+"_"+a[0],["?x"+str(t) for t in tup])]+[pddl.conditions.Atom(p[0],["?o"+str(t) for t in tup])])
             pre = pre + [disjunction]
 
-   if (len(str_args)>1):
-      for tup in itertools.combinations(str_args,2):
-         pre = pre + [pddl.conditions.NegatedAtom("=",["?x"+str(t) for t in tup])]      
-
-   uc = pddl.conditions.UniversalCondition([pddl.pddl_types.TypedObject("?y"+str(i),"var") for i in range(1,len(a))], [pddl.conditions.NegatedAtom("header-"+a[0],["?y"+str(i) for i in range(1,len(a))])])
-   disjunction = pddl.conditions.Disjunction([pddl.conditions.Atom("header-"+a[0],["?x"+str(i) for i in range(1,len(a))])]+[uc])
-   pre = pre + [disjunction]   
+   pre = pre + [pddl.conditions.Atom("header-"+a[0],["?x"+str(i) for i in range(1,len(a))])]
       
    eff = []
    eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.NegatedAtom("programming",[]))]
-   eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("header-"+a[0],["?x"+str(i) for i in range(1,len(a))]))]
 
    if input_level == INPUT_STEPS:
       eff = eff + [pddl.effects.Effect([],pddl.conditions.Atom("plan-"+a[0],["?i1"]+["?o"+str(i) for i in range(1,len(a))]),pddl.conditions.NegatedAtom("current",["?i1"]))]

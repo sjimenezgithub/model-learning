@@ -150,7 +150,7 @@ As explained in this paper we aim to reduce the amount of input knowledge provid
 A solution to the $\Lambda'$ learning task is a set of operator schema $\Xi$ that is compliant with the predicates in $\Psi$, and the given set of initial and final states.
 
 
-\subsection{Learning action models using a classical planner}
+\subsection{Learning action models from states using a classical planner}
 Our approach for addressing $\Lambda'=\tup{\Psi,\Sigma}$ is compiling this learning task into a classical planning task that can later be solved by an off-the-shelf classical planner. The intuition behind the compilation is that a solution to $P_{\Lambda}$ is a sequence of actions that first, programs the action action model (i.e. the preconditions, $\del$ and $\add$ effects of each action schema $\xi\in\Xi$) and then, sequentially, validates the programmed action model in their labels $\Sigma$ one after the other.
 
 To formalize the compilation we first define $t$ classical planning instances $P_1=\tup{F,A,I_1,G_1},\ldots,P_t=\tup{F,A,I_t,G_t}$, that belong to the same planning frame $\Phi=\tup{F,A}$ (i.e. share the same fluents and actions and differ only in the initial state and goals). Let $\Omega$ be the set of objects that appear in the states $\Sigma$, i.e., $\Omega=\{o|o\in s_i\cup s_i', {\small 1\leq i\leq t}\}$. Then $F$ and $A$ are the set of fluents and actions built instantiating the predicates in $\Psi$ with the objects in $\Omega$.  Finally the initial state $I_i$, {\small $1\leq i\leq t$}, is given by the state $s_i\in \sigma_i$ and the goals are defined by the state $s_i'\in \sigma_i$. 
@@ -163,7 +163,7 @@ Now we are ready to define the compilation for learning action models using a cl
 
 \item Fluents $\{test_i\}_{1\leq i\leq t}$, indicating the plan where the programmed model is currently being validated.
 \end{itemize}
-\item $I_{\Lambda}$, contains the fluents from $F$ that encode the initial state $s_1\in P_1$.
+\item $I_{\Lambda}$, contains the fluents from $F$ that encode the initial state $s_1\in P_1$ and the header of the actions.
 \item $G_{\Lambda}=\{test_i\}$,{\small $1\leq i\leq t$}, indicates that the programmed model is validated in all the examples.
 \item $A_{\Lambda}$ replaces the actions in $A$ with actions of three types:
 \begin{enumerate}
@@ -201,8 +201,7 @@ Now we are ready to define the compilation for learning action models using a cl
 \begin{align*}
 \hspace*{7pt}\pre(\mathsf{apply_{\xi,\upsilon,\upsilon'}})=&\{\neg header(\xi(\upsilon))\}\cup\\     
                                            &\{\neg pre_{\xi}(p(\upsilon))\vee p(\upsilon')\}_{\forall p\in\Psi}.\\
-\cond(\mathsf{apply_{\xi,\upsilon,\upsilon'}})=&\{\emptyset\}\rhd\{header(\xi(\upsilon))\},\\
-&\{del_{\xi}(p(\upsilon))\}\rhd\{\neg p(\upsilon')\}_{\forall p\in\Psi},\\
+\cond(\mathsf{apply_{\xi,\upsilon,\upsilon'}})=&\{del_{\xi}(p(\upsilon))\}\rhd\{\neg p(\upsilon')\}_{\forall p\in\Psi},\\
 &\{add_{\xi}(p(\upsilon))\}\rhd\{p(\upsilon')\}_{\forall p\in\Psi}.
 \end{align*}
 \end{small}
@@ -226,6 +225,7 @@ Any classical plan $\pi$ that solves $P_{\Lambda}$ induces a valid action model 
 Once an action schema is programmed it can only be executed. The only way of achieving a test fluent is by achieving the goal state in its associated label. If this is done for all the input examples it means that the programmed model is compliant with the learning input knowledge and hence, solves the action model learning task.
 \end{proof}
 
+\subsection{Learning action models from plans using a classical planner}
 Interestingly the compilation is also valid for partially specified action models since the known preconditions and effects can be part of the initial state. With this regard the approach allows also transfer learning in which we generate the action model for a given sub-task and then encode this model as already programmed actions for learning new or more challenging action models. Evenmore, the compilation is extensible to the scenario in which a set of action plans $\Pi$ is available s.t., each plan $\pi_i\in \Pi$, {\small $1\leq i\leq t$}, is a solution to the corresponding classical planning instance $P_i=\tup{F,A,I_i,G_i}$. In this case:
 \begin{itemize}
 \item $F_{\Lambda}$ have to include the fluents $plan(name(\xi),i,\Omega^{ar(a)})$ for encoding the plans in $\Pi$. Fluents $at_i$ and $next_{i,i_2}$, {\small $1\leq i<i2\leq n$}, indicate the plan step where the programmed model is being validated and $n$ is the max length of a plan in $\Pi$.
