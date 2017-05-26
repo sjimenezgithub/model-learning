@@ -1,0 +1,48 @@
+This is BibTeX, Version 0.99d (TeX Live 2015/Debian)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: bootstrap-learning.aux
+The style file: aaai.bst
+Database file #1: bootstrap-learning.bib
+Warning--can't use both volume and number fields in kambhampati:modellite:AAAI2007
+You've used 8 entries,
+            2568 wiz_defined-function locations,
+            626 strings with 6145 characters,
+and the built_in function-call counts, 3256 in all, are:
+= -- 347
+> -- 123
+< -- 3
++ -- 41
+- -- 40
+* -- 254
+:= -- 520
+add.period$ -- 40
+call.type$ -- 8
+change.case$ -- 51
+chr.to.int$ -- 8
+cite$ -- 9
+duplicate$ -- 132
+empty$ -- 238
+format.name$ -- 60
+if$ -- 678
+int.to.chr$ -- 1
+int.to.str$ -- 0
+missing$ -- 8
+newline$ -- 51
+num.names$ -- 24
+pop$ -- 51
+preamble$ -- 1
+purify$ -- 60
+quote$ -- 0
+skip$ -- 107
+stack$ -- 0
+substring$ -- 153
+swap$ -- 36
+text.length$ -- 3
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 60
+warning$ -- 1
+while$ -- 26
+width$ -- 10
+write$ -- 112
+(There was 1 warning)
