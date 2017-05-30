@@ -6,8 +6,9 @@ def format_problem(task,domain):
    str_out = str_out + "  (:domain "+ task.domain_name + ")\n"
 
    str_out = str_out + "  (:objects "
-#   for i in sorted(set(task.objects)-utils.compute_constants(task,domain)):
-#      str_out = str_out + str(i).replace(":"," - ") + " "
+   for i in sorted(set(task.objects)):
+      str_out = str_out + str(i).replace(":"," - ") + " "
+   
    str_out = str_out + ")\n"
 
    str_out = str_out + "  (:init " + format_condition([i for i in task.init if i.predicate!="="])+")\n"

@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-import sys, os, copy, glob
+import sys, os, copy, glob, itertools
 import pddl, pddl_parser
 import fdtask_to_pddl, policy
 
@@ -76,7 +76,7 @@ for line in file:
       step = int(line.replace(")\n","").split("Checking next happening (time ")[1])
       p.addRule(policy.Rule(copy.deepcopy(state),actions[step-1]))
       if (((step-1)%nsteps)==0):
-         step_states.append(state)      
+         step_states.append(copy.deepcopy(state))      
 
    if "Deleting " in line:
       name = line.replace("Deleting ","").replace("(","").replace(")\n","").split(" ")[0]
@@ -92,8 +92,16 @@ file.close()
 
 for i in range(1,len(step_states)):
    fd_task.init=[]
+   # Positive 
    for l in step_states[i-1].literals:
       fd_task.init.append(pddl.conditions.Atom(l.name,l.args))
+   # Negative
+   for p in fd_task.predicates:
+      allargs=itertools.product([str(o.name) for o in fd_task.objects], repeat=len(p.arguments))	
+      for arg in list(allargs):
+         print policy.Literal(p.name,arg)
+         if not step_states[i-1].findLiteral(policy.Literal(p.name,arg)):
+            fd_task.init.append(pddl.conditions.NegatedAtom(p.name,arg))                   
 
    goals = []
    for l in step_states[i].literals:
