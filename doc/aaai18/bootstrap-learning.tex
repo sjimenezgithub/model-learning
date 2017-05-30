@@ -86,7 +86,7 @@ This work focuses on learning action models for classical planners. This is a we
 
 Motivated by recent advances on effective exploration of planning state spaces~\cite{} and on the learning of complex structures with classical planners~\cite{segovia2017unsupervised}, this paper introduces an innovative approach for learning classical planning action models. The contribution of this work are two-fold:
 \begin{enumerate}
-\item An inductive learning algorithm that minimizes the burden of required supervision, that is flexible to different levels of input knowledge, and that can be defined as a classical planning compilation. 
+\item An inductive learning algorithm that minimizes the required input knowledge, that is also flexible to different levels of this input knowledge, and that can be defined as a classical planning compilation. 
 \item A method for autonomously collect {\em informative} examples for action model learning using an exploration-based classical planner.
 \end{enumerate}
 
@@ -103,7 +103,7 @@ Given a planning frame $\Phi=\tup{F,A}$, a {\em classical planning problem} is a
 
 We assume that fluents are instantiated from predicates, as in PDDL~\cite{fox2003pddl2}. Specifically, there exists a set of predicates $\Psi$, and each predicate $p\in\Psi$ has an argument list of arity $ar(p)$. Given a set of objects $\Omega$, the set of fluents $F$ is then induced by assigning objects in $\Omega$ to the arguments of predicates in $\Psi$, i.e.~$F=\{p(\omega):p\in\Psi,\omega\in\Omega^{ar(p)}\}$ where, given a set $X$, $X^n$ is the $n$-th Cartesian power of $X$.
 
-Likewise we assume actions in $a\in A$ are instantiated from operator schema $\Xi$, i.e.~$A=\{\xi(\omega):\xi\in\Xi,\omega\in\Omega^{ar(\xi)}\}$. An operator schema $\xi\in \Xi$, is represented by an operator {\em header}: that contains a unique symbol, $name(\xi)$, and a list of variables, $pars(\xi)$. The operator {\em body} consists of three sets of lifted predicates: the {\em preconditions}, $pre(\xi)$, the {\em positive effects}, $add(\xi)$, and the {\em negative effects}, $del(\xi)$. Figure~\ref{fig:stack} shows an example of planning action schema from the blocksworld as represented in PDDL.
+Likewise we assume actions in $a\in A$ are instantiated from operator schema $\Xi$, i.e.~$A=\{\xi(\omega):\xi\in\Xi,\omega\in\Omega^{ar(\xi)}\}$. An operator schema $\xi\in \Xi$, is represented by an operator {\em header}: a lifted predicate whose name is, $name(\xi)$, and the list of variables, $pars(\xi)\subseteq\Omega_v$. The set $\Omega_v=\{var_1,\ldots,var_v\}$ is a new set of objects, $\Omega_v\cap\Omega=\emptyset$, representing variable names. The number of {\em variable} objects, i.e. $|\Omega_v|$, is given by the action with the maximum arity. For instance, in the blocksworld $\Omega_v=\{var_1,var_2\}$ since action $stack$, Figure~\ref{fig:stack}, (and $unstack$) has two parameters. The operator {\em body} comprises three sets of lifted predicates over the variables appearing in the corresponding action header: the {\em preconditions}, $pre(\xi)$, the {\em positive effects}, $add(\xi)$, and the {\em negative effects}, $del(\xi)$.  
 
 \begin{figure}[hbt]
 \begin{footnotesize}
@@ -144,7 +144,7 @@ A solution to the learning task $\Lambda$ is a set of operator schema $\Xi$ that
 
 As explained in this paper we aim to reduce the amount of input knowledge provided to the learning task so we redefine it as $\Lambda'=\tup{\Psi,\Sigma}$: 
 \begin{itemize}
-\item $\Psi$, the set of predicates,
+\item $\Psi$, the set of predicates. This set includes the predicates describing the actions header.
 \item $\Sigma=\{\sigma_1,,\ldots,\sigma_t\}$ the set of state pairs $\sigma_i=(s_i,s_i')$. 
 \end{itemize}
 A solution to the $\Lambda'$ learning task is a set of operator schema $\Xi$ that is compliant with the predicates in $\Psi$, and the given set of initial and final states.
@@ -159,9 +159,8 @@ Now we are ready to define the compilation for learning action models using a cl
 \begin{itemize}
 \item $F_{\Lambda}$ extends $F$ with:
 \begin{itemize}
-\item Fluents representing the programmed action model. They have the form $header(name(\xi),\Omega_v^{ar(\xi)})$, $pre_p(name(\xi),\Omega_v^{ar(p)})$, $del_p(name(\xi),\Omega_v^{ar(p)})$ and $add_p(name(\xi),\Omega_v^{ar(p)})$ where $p\in \Psi$, $\xi\in\Xi$ and $\Omega_v=\{var_1,\ldots,var_v\}$ is a new set of objects, $\Omega_v\cap\Omega=\emptyset$, representing variable names. The number of {\em variable} objects, i.e. $|\Omega_v|$, is given by the action with the maximum arity in $\Pi$. For instance, for the blocksworld $\Omega_v=\{var_1,var_2\}$ since actions $stack$ and $unstack$ have two parameters.
-
-\item Fluents $\{test_i\}_{1\leq i\leq t}$, indicating the plan where the programmed model is currently being validated.
+\item Fluents representing the programmed action model. They have the form $header(name(\xi),\Omega_v^{ar(\xi)})$, $pre_p(name(\xi),\Omega_v^{ar(p)})$, $del_p(name(\xi),\Omega_v^{ar(p)})$ and $add_p(name(\xi),\Omega_v^{ar(p)})$ where $p\in \Psi$, $\xi\in\Xi$.
+\item Fluents $\{test_i\}_{1\leq i\leq t}$, indicating the example where the programmed model is currently being validated.
 \end{itemize}
 \item $I_{\Lambda}$, contains the fluents from $F$ that encode the initial state $s_1\in P_1$ and the header of the actions.
 \item $G_{\Lambda}=\{test_i\}$,{\small $1\leq i\leq t$}, indicates that the programmed model is validated in all the examples.
@@ -206,7 +205,7 @@ Now we are ready to define the compilation for learning action models using a cl
 \end{align*}
 \end{small}
 
-\item The actions for changing the active test where the model is currently being validated.
+\item The actions for changing the active example where the model is currently being validated.
 \begin{small}
 \begin{align*}
 \hspace*{7pt}\pre(\mathsf{validate_{i}})=&G_i\cup\{\{test_j\}_{j\in 1\leq j<i}\}.\\
@@ -226,7 +225,9 @@ Once an action schema is programmed it can only be executed. The only way of ach
 \end{proof}
 
 \subsection{Learning action models from plans using a classical planner}
-Interestingly the compilation is also valid for partially specified action models since the known preconditions and effects can be part of the initial state. With this regard the approach allows also transfer learning in which we generate the action model for a given sub-task and then encode this model as already programmed actions for learning new or more challenging action models. Evenmore, the compilation is extensible to the scenario in which a set of action plans $\Pi$ is available s.t., each plan $\pi_i\in \Pi$, {\small $1\leq i\leq t$}, is a solution to the corresponding classical planning instance $P_i=\tup{F,A,I_i,G_i}$. In this case:
+Interestingly the compilation is also valid for partially specified action models since the known preconditions and effects can be part of the initial state. With this regard the approach allows also transfer learning in which we generate the action model for a given sub-task and then encode this model as already programmed actions for learning new or more challenging action models.
+
+Evenmore, the compilation is extensible to the scenario in which a set of action plans $\Pi$ is available s.t., each plan $\pi_i\in \Pi$, {\small $1\leq i\leq t$}, is a solution to the corresponding classical planning instance $P_i=\tup{F,A,I_i,G_i}$. In this case:
 \begin{itemize}
 \item $F_{\Lambda}$ have to include the fluents $plan(name(\xi),i,\Omega^{ar(a)})$ for encoding the plans in $\Pi$. Fluents $at_i$ and $next_{i,i_2}$, {\small $1\leq i<i2\leq n$}, indicate the plan step where the programmed model is being validated and $n$ is the max length of a plan in $\Pi$.
 \item $I_{\Lambda}$ is extended with the fluents $plan(name(\xi),i,\Omega^{ar(a)})$, {\small $1\leq i\leq |\pi_1|$} that encode the plan $\pi_1\in \Pi$ for solving $P_1$, and the fluents $at_1$ and $\{next_{i,i_2}\}$, {\small $1\leq i<i2\leq n$}, for indicating that the plan step where to start validating the programmed model.
@@ -243,15 +244,14 @@ Interestingly the compilation is also valid for partially specified action model
 
 
 
-\section{Generating the learning examples}
+\section{Generating informative learning examples}
 Observation: If a predicate is not appearing either in the initial not in the final state i will not appear in the action model. 
 
 
 \section{Evaluation}
+Because we are evaluating our learned models empirically, evaluation is closely related to the generation of informative and diverse learning examples.
 
 \section{Related work}
-
-\section{Conclusions}
 
 %The  LIVE  system  (Shen  and  Simon,  1989)  was  an  extension  of  the  General  Problem  Solver  (GPS) framework (Ernst and Newell, 1969) with a learning component. LIVE alternated problem solving with model  learning  to  automatically  define  operators.  The  decision  about  when  to  alternate  depended  onsurprises,  that  is  situations  where  an  action  effects  violated  its  predicted  model.  EXPO  (Gil,  1992) generated plans with the  PRODIGY  system (Minton, 1988), monitored the plans execution, detected differences in the predicted and the observed states and constructed a set of specific hypotheses to fix those differences. Then the  EXPO  filtered the hypotheses heuristically.  OBSERVER  (Wang, 1994) learned operators by monitoring expert agents and applying the version spaces algorithm (Mitchell, 1997) to the observations. When the system already had an operator representation, the preconditions were updated by removing facts that were not present in the new observation’s pre-state; the effects were augmented by adding facts that were in the observation’s delta-state. All of these early works were based on direct liftings of the observed states. They also benefit from experience beyond simple interaction with the environment such as exploratory plans or external teachers, but  none  provided  a  theoretical  justification  for  this  second  source  of  knowledge.  The  work  recently reported in (Walsh and Littman, 2008) succeeds in bounding the number of interactions the learner must complete to learn the preconditions and effects of a STRIPS action model. This work shows that learning STRIPS  operators  from  pure  interaction  with  the  environment,  can  require  an  exponential  number  of samples, but that limiting the size of the precondition lists enable sample-efficient learning (polynomial in the number of actions and predicates of the domain). The work also proves that efficient learning is also possible without this limit if an agent has access to an external teacher that can provide solution traces on demand.
 
@@ -260,6 +260,8 @@ Observation: If a predicate is not appearing either in the initial not in the fi
 %In addition action model learning has been studied in domains where there is partial state observability. ARMS uses the same kind od learning examples but assumes the exampls are given and proceeds in two phases. In the first phase, ARMS extracts frequent action sets from plans that share a common set of parameters. ARMS also finds some frequent literal-action pairs with the help of the initial state and the goal state that provide an initial guess on the actions preconditions, and effects. In the second phase, ARMS uses the frequent action sets and literal-action pairs to define a set of weighted constraints that must hold in order to make the plans correct. Then, ARMS solves the resulting weighted MAX-SAT problem and produces action models from the solution of the SAT problem. This process iterates until all actions are modelled. For a complex planning domain that involves hundreds of literals and actions, the corresponding weighted MAX-SAT representation is likely to be too large to be solved efficiently as the number of clauses can reach up to tens of thousands. For that reason ARMS implements a hill-climbing method that models the actions approximately. Consequently, the ARMS output is a model which may be inconsistent with the examples.
 
 %(Amir and Chang, 2008) introduced an algorithm that tractably generates all the STRIPS-like models that  could  have  lead  to  a  set  of  observations.  Given  a  formula  representing  the  initial  belief  state,  a sequence of executed actions and the corresponding observed states(where partial observations of states are given), it builds a complete explanation of observations by models of actions through a Conjunctive Normal Form (CNF) formula. By linking the possible states of fluents to the effect propositions in the action models, the complexity of the CNF encoding can be controlled to find  exact  solutions  efficiently  in  some  circumstances.  The  learning  algorithm  updates  the  formula  of the belief state with every action and observation in the sequence. This update makes sure that the new formula represents all the transition relations consistent with the actions and observations. The formula returned at the end includes all consistent models, which can then be retrieved with additional processing. Unlike the previous approaches, the one described in (Mour ao et al., 2008) deals with both missing and noisy predicates in the observations. For each action in a given domain, they use kernel perceptrons to learn predictions of the domain properties that change because of the action execution. LOCM (Cresswellet al., 2009) induces action schemas without being provided with any information about initial, goal or intermediate state descriptions for the example action sequences. LOCM receives descriptions of plans or plan fragments, uses them to create states machines for the different domain objects and extracts the action schemas from these state machines.
+
+\section{Conclusions}
 
 \bibliographystyle{aaai}
 \bibliography{bootstrap-learning}
