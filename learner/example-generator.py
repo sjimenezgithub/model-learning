@@ -28,8 +28,9 @@ print("\n\nExecuting... " + cmd)
 os.system(cmd)
 
 plan_files = glob.glob("sas_plan*")
-plan_files.sort(key=os.path.getmtime)
-plan_filename = plan_files[0]
+plan_files.sort()
+plan_filename = plan_files[-1]
+print plan_filename
 
 # Creating a FD task with the domain and the problem file
 fd_domain = pddl_parser.pddl_file.parse_pddl_file("domain", domain_filename)
@@ -54,7 +55,6 @@ action_id=1
 baction = False
 bstate = False
 p=policy.Policy([])
-step_states = []
 for line in file:
    # Reading an action
    if baction==True:
@@ -75,8 +75,7 @@ for line in file:
    if "Checking next happening (time " in line:
       step = int(line.replace(")\n","").split("Checking next happening (time ")[1])
       p.addRule(policy.Rule(copy.deepcopy(state),actions[step-1]))
-      if (((step-1)%nsteps)==0):
-         step_states.append(copy.deepcopy(state))      
+      states=states+[copy.deepcopy(state)]      
 
    if "Deleting " in line:
       name = line.replace("Deleting ","").replace("(","").replace(")\n","").split(" ")[0]
@@ -86,31 +85,52 @@ for line in file:
    if "Adding " in line:
       name = line.replace("Adding ","").replace("(","").replace(")\n","").split(" ")[0]
       args = line.replace("Adding ","").replace("(","").replace(")\n","").split(" ")[1:]
-      state.addLiteral(policy.Literal(name,args))             
-
+      state.addLiteral(policy.Literal(name,args))      
 file.close()
+states=states+[copy.deepcopy(state)]      
 
-for i in range(1,len(step_states)):
+
+# Output the examples problems
+counter = 1
+for i in range(0,len(states)):
    fd_task.init=[]
-   # Positive 
-   for l in step_states[i-1].literals:
-      fd_task.init.append(pddl.conditions.Atom(l.name,l.args))
-   # Negative
-   for p in fd_task.predicates:
-      allargs=itertools.product([str(o.name) for o in fd_task.objects], repeat=len(p.arguments))	
-      for arg in list(allargs):
-         print policy.Literal(p.name,arg)
-         if not step_states[i-1].findLiteral(policy.Literal(p.name,arg)):
-            fd_task.init.append(pddl.conditions.NegatedAtom(p.name,arg))                   
+   if ((i%nsteps)==0 and i>0) or (i==len(states)-1 and i>0):
+      # Positive 
+      for l in states[i-nsteps].literals:
+         fd_task.init.append(pddl.conditions.Atom(l.name,l.args))
+      
+      # Negative
+      for p in fd_task.predicates:
+         allargs=itertools.product([str(o.name) for o in fd_task.objects], repeat=len(p.arguments))	
+         for arg in list(allargs):
+            if p.name !="=":
+               if states[i-nsteps].findLiteral(policy.Literal(p.name,arg))==-1:
+                  fd_task.init.append(pddl.conditions.NegatedAtom(p.name,arg))
 
-   goals = []
-   for l in step_states[i].literals:
-      goals = goals + [pddl.conditions.Atom(l.name,l.args)]
-   fd_task.goal=pddl.conditions.Conjunction(goals)      
+      goals = []
+      for l in states[i].literals:
+         goals = goals + [pddl.conditions.Atom(l.name,l.args)]
+      fd_task.goal=pddl.conditions.Conjunction(goals)
+
+      # Writing the compilation output domain and problem
+      fdomain=open("test-"+str(counter)+".pddl","w")
+      fdomain.write(fdtask_to_pddl.format_problem(fd_task,fd_problem))
+      fdomain.close()                  
+                  
+      counter=counter+1
    
-   # Writing the compilation output domain and problem
-   fdomain=open("example."+str(i)+".pddl","w")
-   fdomain.write(fdtask_to_pddl.format_problem(fd_task,fd_problem))
-   fdomain.close()            
+# Output the examples plans
+counter = 1
+for i in range(0,len(actions)):
+   if (i%nsteps)==0:      
+      fdomain=open("plan-"+str(counter)+".pddl","w")
+      index=0
+      counter=counter+1
+      
+   fdomain.write(str(index)+": "+str(actions[i])+"\n")
+   index = index + 1
+   
+   if (i%nsteps)==(nsteps-1):
+      fdomain.close()
       
 sys.exit(0)

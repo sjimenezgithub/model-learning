@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 import sys,os
 
-cmd=  "rm -rf  *.pyc *.*~"
+cmd=  "rm -rf  *.pyc *.*~ test-* plan-* aux_* output* *.log sas* learned_domain.pddl"
 print cmd
 os.system(cmd)
 
