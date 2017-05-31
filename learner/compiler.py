@@ -113,10 +113,6 @@ MAX_STEPS = get_max_steps(plans)
 MAX_VARS = get_max_vars(plans)
 
 # Compilation Problem
-for a in actions:
-   fd_task.init.append(pddl.conditions.Atom("header-"+a[0],["var"+str(i) for i in range(1,len(a))]))
-
-
 fd_task.init.append(pddl.conditions.Atom("programming",[]))
 if input_level <= INPUT_STEPS:               
    fd_task.init.append(pddl.conditions.Atom("current",["i1"])) 
@@ -166,9 +162,6 @@ for a in actions:
          fd_task.predicates.append(pddl.predicates.Predicate("del_"+p[0]+"_"+a[0],[pddl.pddl_types.TypedObject("?x"+str(i),"var") for i in range(1,len(p))]))      
          fd_task.predicates.append(pddl.predicates.Predicate("add_"+p[0]+"_"+a[0],[pddl.pddl_types.TypedObject("?x"+str(i),"var") for i in range(1,len(p))]))   
 
-for a in actions:
-   fd_task.predicates.append(pddl.predicates.Predicate("header-"+a[0],[pddl.pddl_types.TypedObject("?x"+str(i),"var") for i in range(1,len(a))]))
-
 if input_level <= INPUT_STEPS:   
    for a in actions:
       fd_task.predicates.append(pddl.predicates.Predicate("plan-"+a[0],[pddl.pddl_types.TypedObject("?i","step")]+[pddl.pddl_types.TypedObject("?o"+str(i),a[i]) for i in range(1,len(a))]))   
@@ -178,8 +171,7 @@ if input_level <= INPUT_STEPS:
 old_actions = copy.deepcopy(actions)
 for a in actions:
    old_action = copy.deepcopy(a)
-   params=[pddl.pddl_types.TypedObject("?x"+str(i),"var") for i in range(1,len(a))]   
-   params=params+[pddl.pddl_types.TypedObject("?o"+str(i),a[i]) for i in range(1,len(a))]
+   params=[pddl.pddl_types.TypedObject("?o"+str(i),a[i]) for i in range(1,len(a))]
    if input_level <= INPUT_STEPS:                  
       params=params+[pddl.pddl_types.TypedObject("?i1","step")]
       params=params+[pddl.pddl_types.TypedObject("?i2","step")]
@@ -196,10 +188,8 @@ for a in actions:
       if (len(p)<= len(old_action)):
          str_args="".join(map(str,[""+str(i) for i in range(1,len(old_action))]))
          for tup in itertools.product(str_args, repeat=(len(p)-1)):
-            disjunction = pddl.conditions.Disjunction([pddl.conditions.NegatedAtom("pre_"+p[0]+"_"+a[0],["?x"+str(t) for t in tup])]+[pddl.conditions.Atom(p[0],["?o"+str(t) for t in tup])])
+            disjunction = pddl.conditions.Disjunction([pddl.conditions.NegatedAtom("pre_"+p[0]+"_"+a[0],["var"+str(t) for t in tup])]+[pddl.conditions.Atom(p[0],["?o"+str(t) for t in tup])])
             pre = pre + [disjunction]
-
-   pre = pre + [pddl.conditions.Atom("header-"+a[0],["?x"+str(i) for i in range(1,len(a))])]
       
    eff = []
    eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.NegatedAtom("programming",[]))]
@@ -216,14 +206,14 @@ for a in actions:
       if (len(p) <= len(old_action)):
          str_args="".join(map(str,[""+str(i) for i in range(1,len(old_action))]))
          for tup in itertools.product(str_args, repeat=(len(p)-1)):         
-            condition = pddl.conditions.Conjunction([pddl.conditions.Atom("del_"+p[0]+"_"+a[0],["?x"+str(t) for t in tup])])      
+            condition = pddl.conditions.Conjunction([pddl.conditions.Atom("del_"+p[0]+"_"+a[0],["var"+str(t) for t in tup])])      
             eff = eff + [pddl.effects.Effect([],condition,pddl.conditions.NegatedAtom(p[0],["?o"+str(t) for t in tup]))]
       
    for p in predicates:
       if (len(p) <= len(old_action)):
          str_args="".join(map(str,[""+str(i) for i in range(1,len(old_action))]))
          for tup in itertools.product(str_args, repeat=(len(p)-1)):                  
-            condition = pddl.conditions.Conjunction([pddl.conditions.Atom("add_"+p[0]+"_"+a[0],["?x"+str(t) for t in tup])])
+            condition = pddl.conditions.Conjunction([pddl.conditions.Atom("add_"+p[0]+"_"+a[0],["var"+str(t) for t in tup])])
             eff = eff + [pddl.effects.Effect([],condition,pddl.conditions.Atom(p[0],["?o"+str(t) for t in tup]))]
    
    fd_task.actions.append(pddl.actions.Action(a[0],params,len(params),pddl.conditions.Conjunction(pre),eff,0))
@@ -311,7 +301,6 @@ os.system(cmd)
 
 
 # Reading the plan output by the compilation
-params = [[] for _ in xrange(len(actions))]
 pres = [[] for _ in xrange(len(actions))]
 dels = [[] for _ in xrange(len(actions))]
 adds = [[] for _ in xrange(len(actions))]
@@ -321,7 +310,7 @@ for line in file:
    keys="(program_pre_"
    if keys in line:
       aux = line.replace("\n","").replace(")","").split(keys)[1].split(" ")
-      action = aux[0].split("_")[1:]+aux[1:]      
+      action = aux[0].split("_")[1:]+aux[1:]
       pred = [aux[0].split("_")[0]]+aux[1:]
       index = [a[0] for a in actions].index(action[0])
       pres[index].append(pred)
@@ -341,15 +330,6 @@ for line in file:
       addp = [aux[0].split("_")[0]]+aux[1:]
       index = [a[0] for a in actions].index(action[0])
       adds[index].append(addp)
-
-   key1="(program_"
-   key2="(test_"   
-   if not key1 in line and not key2 in line and " : (" in line:
-      str_action = line.split(" : ")[1].replace("\n","")
-      ps = ["?o"+v.replace("var","") for v in str_action.replace("(","").replace(")","").split(" ") if "var" in v]
-      a_name = str_action.replace("(","").replace(")","").split(" ")[0]
-      index = [a[0] for a in actions].index(a_name)
-      params[index] = ps
 file.close()
 
 
@@ -357,7 +337,8 @@ counter = 0
 new_fd_task = pddl_parser.pddl_file.parsing_functions.parse_task(fd_domain, fd_problems[0])
 new_fd_task.actions=[]
 for action in actions:
-   ps = [pddl.pddl_types.TypedObject(params[counter][i],action[i+1]) for i in range(0,len(params[counter]))]
+   params = ["?o"+str(i+1) for i in range(0,len(action[1:]))]
+   ps = [pddl.pddl_types.TypedObject(params[i],action[i+1]) for i in range(0,len(params))]
    pre =[]
    for p in pres[counter]:
       args = ["?o"+i.replace("var","") for i in p[1:]]
