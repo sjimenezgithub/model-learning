@@ -198,8 +198,8 @@ Now we are ready to define the compilation for learning action models using a cl
 \item The actions for applying an operator schema $\xi\in\Xi$ (that is already programmed with variables $\upsilon\in\Omega_v^{ar(\xi)}$) and that is bound with objects $\upsilon'\in\Omega^{ar(\xi)}$)
 \begin{small}
 \begin{align*}
-\hspace*{7pt}\pre(\mathsf{apply_{\xi,\upsilon,\upsilon'}})=&\{\neg header(\xi(\upsilon))\}\cup\\     
-                                           &\{\neg pre_{\xi}(p(\upsilon))\vee p(\upsilon')\}_{\forall p\in\Psi}.\\
+\hspace*{7pt}\pre(\mathsf{apply_{\xi,\upsilon,\upsilon'}})=&\{header(\xi(\upsilon))\}\cup\\     
+                                           &\{pre_{\xi}(p(\upsilon))\implies p(\upsilon')\}_{\forall p\in\Psi}.\\
 \cond(\mathsf{apply_{\xi,\upsilon,\upsilon'}})=&\{del_{\xi}(p(\upsilon))\}\rhd\{\neg p(\upsilon')\}_{\forall p\in\Psi},\\
 &\{add_{\xi}(p(\upsilon))\}\rhd\{p(\upsilon')\}_{\forall p\in\Psi}.
 \end{align*}
