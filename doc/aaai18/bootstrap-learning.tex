@@ -230,7 +230,10 @@ Interestingly the compilation is also valid for partially specified action model
 Evenmore, the compilation is extensible to the scenario in which a set of action plans $\Pi$ is available s.t., each plan $\pi_i\in \Pi$, {\small $1\leq i\leq t$}, is a solution to the corresponding classical planning instance $P_i=\tup{F,A,I_i,G_i}$. In this case:
 \begin{itemize}
 \item $F_{\Lambda}$ have to include the fluents $plan(name(\xi),i,\Omega^{ar(a)})$ for encoding the plans in $\Pi$. Fluents $at_i$ and $next_{i,i_2}$, {\small $1\leq i<i2\leq n$}, indicate the plan step where the programmed model is being validated and $n$ is the max length of a plan in $\Pi$.
-\item $I_{\Lambda}$ is extended with the fluents $plan(name(\xi),i,\Omega^{ar(a)})$, {\small $1\leq i\leq |\pi_1|$} that encode the plan $\pi_1\in \Pi$ for solving $P_1$, and the fluents $at_1$ and $\{next_{i,i_2}\}$, {\small $1\leq i<i2\leq n$}, for indicating that the plan step where to start validating the programmed model.
+\item $I_{\Lambda}$ is extended with the fluents $plan(name(\xi),i,\Omega^{ar(a)})$, {\small $1\leq i\leq |\pi_1|$} that encode the plan $\pi_1\in \Pi$ for solving $P_1$, and the fluents $at_1$ and $\{next_{i,i_2}\}$, {\small $1\leq i<i2\leq n$}, for indicating that the plan step where to start validating the programmed model. The goals are like in the original compilation.
+\item With respect to the actions,
+\begin{enumerate}
+\item The actions for programming an action schema are the same.
 \item The actions for applying an operator schema have an extra precondition $plan(name(\xi),i,\Omega^{ar(a)})$ and an extra conditional effect $\{at_{i}\}\rhd\{\neg at_{i},at_{i+1}\}_{\forall i\in 1\leq i< n}$.
 \item The actions for changing the active test have an extra precondition, $at_{|\Pi_i|}$, to indicate that we simulated the full current plan and extra conditional states to load the next plan where to validate the model,
 \begin{small}
@@ -240,6 +243,7 @@ Evenmore, the compilation is extensible to the scenario in which a set of action
 &\{\emptyset\}\rhd\{plan(\xi,k,\upsilon\}_{1\leq k<|\Pi_{i+1}|}.
 \end{align*}
 \end{small}
+\end{enumerate}
 \end{itemize}
 
 
