@@ -133,7 +133,14 @@ i.e.~effects whose conditions hold in $s$. The result of applying $a$ in $s$ is 
 
 
 \section{Learning classical planning action models from minimal input knowledge}
-This section formalizes the learning task we address in the paper. First we define the learning task of computing a planning action model from a given set of lifted predicates and a set of plans labelled with their corresponding initial and final states pairs. This task is defined as $\Lambda=\tup{\Psi,\Pi,\Sigma}$: 
+This section formalizes the different learning tasks we address in the paper according to the amount of input knowledge available.
+
+
+\subsubsection{Learning classical planning action models from (s,a,s') tuples}
+
+
+\subsubsection{Learning classical planning action models from plans}
+First we define the learning task of computing a planning action model from a given set of lifted predicates and a set of plans labelled with their corresponding initial and final states pairs. This task is defined as $\Lambda=\tup{\Psi,\Pi,\Sigma}$: 
 \begin{itemize}
 \item $\Psi$ is the set of lifted predicates that define the abstract state space of a given planning domain,
 \item $\Pi=\{\pi_1,\ldots,\pi_t\}$ is the given set of example plans,
@@ -141,6 +148,10 @@ This section formalizes the learning task we address in the paper. First we defi
 \end{itemize}
 
 A solution to the learning task $\Lambda$ is a set of operator schema $\Xi$ that is compliant with the predicates in $\Psi$, the example plans $\Pi$, and their labels $\Sigma$.
+
+\subsubsection{Learning classical planning action models from partially specified plans}
+
+\subsubsection{Learning classical planning action models from states}
 
 As explained in this paper we aim to reduce the amount of input knowledge provided to the learning task so we redefine it as $\Lambda'=\tup{\Psi,\Sigma}$: 
 \begin{itemize}
@@ -150,7 +161,7 @@ As explained in this paper we aim to reduce the amount of input knowledge provid
 A solution to the $\Lambda'$ learning task is a set of operator schema $\Xi$ that is compliant with the predicates in $\Psi$, and the given set of initial and final states.
 
 
-\subsection{Learning action models from states using a classical planner}
+\section{Learning action models from states using a classical planner}
 Our approach for addressing $\Lambda'=\tup{\Psi,\Sigma}$ is compiling this learning task into a classical planning task that can later be solved by an off-the-shelf classical planner. The intuition behind the compilation is that a solution to $P_{\Lambda}$ is a sequence of actions that first, programs the action action model (i.e. the preconditions, $\del$ and $\add$ effects of each action schema $\xi\in\Xi$) and then, sequentially, validates the programmed action model in their labels $\Sigma$ one after the other.
 
 To formalize the compilation we first define $t$ classical planning instances $P_1=\tup{F,A,I_1,G_1},\ldots,P_t=\tup{F,A,I_t,G_t}$, that belong to the same planning frame $\Phi=\tup{F,A}$ (i.e. share the same fluents and actions and differ only in the initial state and goals). Let $\Omega$ be the set of objects that appear in the states $\Sigma$, i.e., $\Omega=\{o|o\in s_i\cup s_i', {\small 1\leq i\leq t}\}$. Then $F$ and $A$ are the set of fluents and actions built instantiating the predicates in $\Psi$ with the objects in $\Omega$.  Finally the initial state $I_i$, {\small $1\leq i\leq t$}, is given by the state $s_i\in \sigma_i$ and the goals are defined by the state $s_i'\in \sigma_i$. 
@@ -224,7 +235,7 @@ Any classical plan $\pi$ that solves $P_{\Lambda}$ induces a valid action model 
 Once an action schema is programmed it can only be executed. The only way of achieving a test fluent is by achieving the goal state in its associated label. If this is done for all the input examples it means that the programmed model is compliant with the learning input knowledge and hence, solves the action model learning task.
 \end{proof}
 
-\subsection{Learning action models from plans using a classical planner}
+\section{Learning action models from plans using a classical planner}
 Interestingly the compilation is also valid for partially specified action models since the known preconditions and effects can be part of the initial state. With this regard the approach allows also transfer learning in which we generate the action model for a given sub-task and then encode this model as already programmed actions for learning new or more challenging action models.
 
 Evenmore, the compilation is extensible to the scenario in which a set of action plans $\Pi$ is available s.t., each plan $\pi_i\in \Pi$, {\small $1\leq i\leq t$}, is a solution to the corresponding classical planning instance $P_i=\tup{F,A,I_i,G_i}$. In this case:
@@ -255,6 +266,8 @@ Observation: If a predicate is not appearing either in the initial not in the fi
 \section{Evaluation}
 Because we are evaluating our learned models empirically, evaluation is closely related to the generation of informative and diverse learning examples.
 
+Mirar evaluacion basada en los domain transition graphs.
+
 \section{Related work}
 
 %The  LIVE  system  (Shen  and  Simon,  1989)  was  an  extension  of  the  General  Problem  Solver  (GPS) framework (Ernst and Newell, 1969) with a learning component. LIVE alternated problem solving with model  learning  to  automatically  define  operators.  The  decision  about  when  to  alternate  depended  onsurprises,  that  is  situations  where  an  action  effects  violated  its  predicted  model.  EXPO  (Gil,  1992) generated plans with the  PRODIGY  system (Minton, 1988), monitored the plans execution, detected differences in the predicted and the observed states and constructed a set of specific hypotheses to fix those differences. Then the  EXPO  filtered the hypotheses heuristically.  OBSERVER  (Wang, 1994) learned operators by monitoring expert agents and applying the version spaces algorithm (Mitchell, 1997) to the observations. When the system already had an operator representation, the preconditions were updated by removing facts that were not present in the new observation’s pre-state; the effects were augmented by adding facts that were in the observation’s delta-state. All of these early works were based on direct liftings of the observed states. They also benefit from experience beyond simple interaction with the environment such as exploratory plans or external teachers, but  none  provided  a  theoretical  justification  for  this  second  source  of  knowledge.  The  work  recently reported in (Walsh and Littman, 2008) succeeds in bounding the number of interactions the learner must complete to learn the preconditions and effects of a STRIPS action model. This work shows that learning STRIPS  operators  from  pure  interaction  with  the  environment,  can  require  an  exponential  number  of samples, but that limiting the size of the precondition lists enable sample-efficient learning (polynomial in the number of actions and predicates of the domain). The work also proves that efficient learning is also possible without this limit if an agent has access to an external teacher that can provide solution traces on demand.
@@ -266,6 +279,8 @@ Because we are evaluating our learned models empirically, evaluation is closely 
 %(Amir and Chang, 2008) introduced an algorithm that tractably generates all the STRIPS-like models that  could  have  lead  to  a  set  of  observations.  Given  a  formula  representing  the  initial  belief  state,  a sequence of executed actions and the corresponding observed states(where partial observations of states are given), it builds a complete explanation of observations by models of actions through a Conjunctive Normal Form (CNF) formula. By linking the possible states of fluents to the effect propositions in the action models, the complexity of the CNF encoding can be controlled to find  exact  solutions  efficiently  in  some  circumstances.  The  learning  algorithm  updates  the  formula  of the belief state with every action and observation in the sequence. This update makes sure that the new formula represents all the transition relations consistent with the actions and observations. The formula returned at the end includes all consistent models, which can then be retrieved with additional processing. Unlike the previous approaches, the one described in (Mour ao et al., 2008) deals with both missing and noisy predicates in the observations. For each action in a given domain, they use kernel perceptrons to learn predictions of the domain properties that change because of the action execution. LOCM (Cresswellet al., 2009) induces action schemas without being provided with any information about initial, goal or intermediate state descriptions for the example action sequences. LOCM receives descriptions of plans or plan fragments, uses them to create states machines for the different domain objects and extracts the action schemas from these state machines.
 
 \section{Conclusions}
+
+Learning action models from examples allows the reformulation of a domain theory.
 
 \bibliographystyle{aaai}
 \bibliography{bootstrap-learning}

@@ -223,28 +223,34 @@ for a in old_actions:
    for p in predicates:
       if (len(p)<= len(a)):
          params=[pddl.pddl_types.TypedObject("?x"+str(i),"var") for i in range(1,len(p))]
+         vars = ["?x"+str(i) for i in range(1,len(p))]
+
+         if (len(p) == 2) and (len(a) == 2):
+            params=[]
+            vars = ["var1"]            
+
          pre = []
          pre = pre + [pddl.conditions.Atom("programming",[])]      
-         pre = pre + [pddl.conditions.NegatedAtom("pre_"+p[0]+"_"+a[0],["?x"+str(i) for i in range(1,len(p))])]
-         pre = pre + [pddl.conditions.NegatedAtom("del_"+p[0]+"_"+a[0],["?x"+str(i) for i in range(1,len(p))])]   
-         pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],["?x"+str(i) for i in range(1,len(p))])]      
-         eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("pre_"+p[0]+"_"+a[0],["?x"+str(i) for i in range(1,len(p))]))]
+         pre = pre + [pddl.conditions.NegatedAtom("pre_"+p[0]+"_"+a[0],vars)]
+         pre = pre + [pddl.conditions.NegatedAtom("del_"+p[0]+"_"+a[0],vars)]   
+         pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],vars)]      
+         eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("pre_"+p[0]+"_"+a[0],vars))]
          fd_task.actions.append(pddl.actions.Action("program_pre_"+p[0]+"_"+a[0],params,len(params),pddl.conditions.Conjunction(pre),eff,0))
 
          pre = []
          pre = pre + [pddl.conditions.Atom("programming",[])]      
-         pre = pre + [pddl.conditions.Atom("pre_"+p[0]+"_"+a[0],["?x"+str(i) for i in range(1,len(p))])]
-         pre = pre + [pddl.conditions.NegatedAtom("del_"+p[0]+"_"+a[0],["?x"+str(i) for i in range(1,len(p))])]            
-         pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],["?x"+str(i) for i in range(1,len(p))])]         
-         eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("del_"+p[0]+"_"+a[0],["?x"+str(i) for i in range(1,len(p))]))]   
+         pre = pre + [pddl.conditions.Atom("pre_"+p[0]+"_"+a[0],vars)]
+         pre = pre + [pddl.conditions.NegatedAtom("del_"+p[0]+"_"+a[0],vars)]            
+         pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],vars)]         
+         eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("del_"+p[0]+"_"+a[0],vars))]   
          fd_task.actions.append(pddl.actions.Action("program_del_"+p[0]+"_"+a[0],params,len(params),pddl.conditions.Conjunction(pre),eff,0))
 
          pre = []
          pre = pre + [pddl.conditions.Atom("programming",[])]      
-         pre = pre + [pddl.conditions.NegatedAtom("pre_"+p[0]+"_"+a[0],["?x"+str(i) for i in range(1,len(p))])]
-         pre = pre + [pddl.conditions.NegatedAtom("del_"+p[0]+"_"+a[0],["?x"+str(i) for i in range(1,len(p))])]            
-         pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],["?x"+str(i) for i in range(1,len(p))])]            
-         eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("add_"+p[0]+"_"+a[0],["?x"+str(i) for i in range(1,len(p))]))]      
+         pre = pre + [pddl.conditions.NegatedAtom("pre_"+p[0]+"_"+a[0],vars)]
+         pre = pre + [pddl.conditions.NegatedAtom("del_"+p[0]+"_"+a[0],vars)]            
+         pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],vars)]            
+         eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("add_"+p[0]+"_"+a[0],vars))]      
          fd_task.actions.append(pddl.actions.Action("program_add_"+p[0]+"_"+a[0],params,len(params),pddl.conditions.Conjunction(pre),eff,0))
 
 # Actions for programming the tests
@@ -295,7 +301,7 @@ fdomain.write(fdtask_to_pddl.format_problem(fd_task,fd_domain))
 fdomain.close()
 
 # Solving the compilation
-cmd = "rm " + OUTPUT_FILENAME + " planner_out.log;"+PLANNER_PATH+"/M aux_domain.pddl aux_problem.pddl -F "+str(sum([len(p) for p in plans]))+" "+PLANNER_PARAMS+" > planner_out.log"
+cmd = "rm " + OUTPUT_FILENAME + " planner_out.log;"+PLANNER_PATH+"/M aux_domain.pddl aux_problem.pddl -F "+str(len(plans)+sum([len(p) for p in plans]))+" "+PLANNER_PARAMS+" > planner_out.log"
 print("\n\nExecuting... " + cmd)
 os.system(cmd)
 
