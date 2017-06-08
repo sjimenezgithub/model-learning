@@ -31,30 +31,30 @@
 ;;stop and allow boarding
 
 (:action board
-  :parameters (?f ?p)
-  :precondition (and (floor ?f) (passenger ?p)(lift-at ?f) (origin ?p ?f))
-  :effect (boarded ?p))
+  :parameters (?o1 ?o2)
+  :precondition (and (floor ?o1) (passenger ?o2)(lift-at ?o1) (origin ?o2 ?o1))
+  :effect (boarded ?o2))
 
 (:action depart
-  :parameters (?f  ?p)
-  :precondition (and (floor ?f) (passenger ?p) (lift-at ?f) (destin ?p ?f)
-		     (boarded ?p))
-  :effect (and (not (boarded ?p))
-	       (served ?p)))
+  :parameters (?o1  ?o2)
+  :precondition (and (floor ?o1) (passenger ?o2) (lift-at ?o1) (destin ?o2 ?o1)
+		     (boarded ?o2))
+  :effect (and (not (boarded ?o2))
+	       (served ?o2)))
 ;;drive up
 
 (:action up
-  :parameters (?f1 ?f2)
-  :precondition (and (floor ?f1) (floor ?f2) (lift-at ?f1) (above ?f1 ?f2))
-  :effect (and (lift-at ?f2) (not (lift-at ?f1))))
+  :parameters (?o1 ?o2)
+  :precondition (and (floor ?o1) (floor ?o2) (lift-at ?o1) (above ?o1 ?o2))
+  :effect (and (lift-at ?o2) (not (lift-at ?o1))))
 
 
 ;;drive down
 
 (:action down
-  :parameters (?f1 ?f2)
-  :precondition (and (floor ?f1) (floor ?f2) (lift-at ?f1) (above ?f2 ?f1))
-  :effect (and (lift-at ?f2) (not (lift-at ?f1))))
+  :parameters (?o1 ?o2)
+  :precondition (and (floor ?o1) (floor ?o2) (lift-at ?o1) (above ?o2 ?o1))
+  :effect (and (lift-at ?o2) (not (lift-at ?o1))))
 )
 
 

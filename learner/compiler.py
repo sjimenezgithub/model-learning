@@ -195,11 +195,10 @@ for a in actions:
    eff = []
    eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.NegatedAtom("programming",[]))]
 
-   if input_level == INPUT_STEPS:
+   if input_level < INPUT_STEPS:
       eff = eff + [pddl.effects.Effect([],pddl.conditions.Atom("plan-"+a[0],["?i1"]+["?o"+str(i) for i in range(1,len(a))]),pddl.conditions.NegatedAtom("current",["?i1"]))]
-      eff = eff + [pddl.effects.Effect([],pddl.conditions.Atom("plan-"+a[0],["?i1"]+["?o"+str(i) for i in range(1,len(a))]),pddl.conditions.Atom("current",["?i2"]))]         
-   
-   if input_level <= INPUT_LENPLAN:                  
+      eff = eff + [pddl.effects.Effect([],pddl.conditions.Atom("plan-"+a[0],["?i1"]+["?o"+str(i) for i in range(1,len(a))]),pddl.conditions.Atom("current",["?i2"]))]
+   else:
       eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.NegatedAtom("current",["?i1"]))]
       eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("current",["?i2"]))]   
 
@@ -319,24 +318,33 @@ for line in file:
       aux = line.replace("\n","").replace(")","").split(keys)[1].split(" ")
       action = aux[0].split("_")[1:]+aux[1:]
       pred = [aux[0].split("_")[0]]+aux[1:]
-      index = [a[0] for a in actions].index(action[0])
-      pres[index].append(pred)
+      indexa = [a[0] for a in actions].index(action[0])
+      indexp= [str(p[0]) for p in predicates].index(pred[0])
+      if len(predicates[indexp])==2 and len(actions[indexa])==2:
+         pred = pred + ["var1"]
+      pres[indexa].append(pred)
 
    keys="(program_del_"
    if keys in line:
       aux = line.replace("\n","").replace(")","").split(keys)[1].split(" ")
       action = aux[0].split("_")[1:]+aux[1:]
       delp = [aux[0].split("_")[0]]+aux[1:]
-      index = [a[0] for a in actions].index(action[0])
-      dels[index].append(delp)      
+      indexa = [a[0] for a in actions].index(action[0])
+      indexp= [str(p[0]) for p in predicates].index(delp[0])
+      if len(predicates[indexp])==2 and len(actions[indexa])==2:
+         delp = delp + ["var1"]
+      dels[indexa].append(delp)               
 
    keys="(program_add_"
    if keys in line:
       aux = line.replace("\n","").replace(")","").split(keys)[1].split(" ")
       action = aux[0].split("_")[1:]+aux[1:]
       addp = [aux[0].split("_")[0]]+aux[1:]
-      index = [a[0] for a in actions].index(action[0])
-      adds[index].append(addp)
+      indexa = [a[0] for a in actions].index(action[0])
+      indexp= [str(p[0]) for p in predicates].index(addp[0])      
+      if len(predicates[indexp])==2 and len(actions[indexa])==2:
+         addp = addp + ["var1"]
+      adds[indexa].append(addp)         
 file.close()
 
 

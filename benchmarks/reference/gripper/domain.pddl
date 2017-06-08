@@ -8,27 +8,27 @@
 		(carry ?o ?g))
 
    (:action move
-       :parameters  (?from ?to)
-       :precondition (and  (room ?from) (room ?to) (at-robby ?from))
-       :effect (and  (at-robby ?to)
-		     (not (at-robby ?from))))
+       :parameters  (?o1 ?o2)
+       :precondition (and  (room ?o1) (room ?o2) (at-robby ?o1))
+       :effect (and  (at-robby ?o2)
+		     (not (at-robby ?o1))))
 
 
 
    (:action pick
-       :parameters (?obj ?room ?gripper)
-       :precondition  (and  (ball ?obj) (room ?room) (gripper ?gripper)
-			    (at ?obj ?room) (at-robby ?room) (free ?gripper))
-       :effect (and (carry ?obj ?gripper)
-		    (not (at ?obj ?room)) 
-		    (not (free ?gripper))))
+       :parameters (?o1 ?o2 ?o3)
+       :precondition  (and  (ball ?o1) (room ?o2) (gripper ?o3)
+			    (at ?o1 ?o2) (at-robby ?o2) (free ?o3))
+       :effect (and (carry ?o1 ?o3)
+		    (not (at ?o1 ?o2)) 
+		    (not (free ?o3))))
 
 
    (:action drop
-       :parameters  (?obj  ?room ?gripper)
-       :precondition  (and  (ball ?obj) (room ?room) (gripper ?gripper)
-			    (carry ?obj ?gripper) (at-robby ?room))
-       :effect (and (at ?obj ?room)
-		    (free ?gripper)
-		    (not (carry ?obj ?gripper)))))
+       :parameters  (?o1  ?o2 ?o3)
+       :precondition  (and  (ball ?o1) (room ?o2) (gripper ?o3)
+			    (carry ?o1 ?o3) (at-robby ?o2))
+       :effect (and (at ?o1 ?o2)
+		    (free ?o3)
+		    (not (carry ?o1 ?o3)))))
 
