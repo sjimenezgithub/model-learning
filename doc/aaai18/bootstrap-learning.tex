@@ -73,18 +73,16 @@
 
 \maketitle
 \begin{abstract}
-This paper presents a novel approach for learning classical planning action models from minimal input knowledge and using exclusively existing classical planners. First, the paper defines a classical planning compilation to learn action models from examples. Second, the paper explains how to collect informative examples using a classical planner based on pure exploratory search. 
+This paper presents a novel approach for learning classical planning action models from minimal input knowledge and using exclusively existing classical planners. First, the paper defines a classical planning compilation to learn action models from examples. Interestingly this compilation accepts partially specified action models and allows different levels of available input knowledge in the examples. Second, the paper explains how to autonomously collect informative examples using a classical planner based on pure exploratory search. 
 \end{abstract}
 
 
 \section{Introduction}
 Off-the-shelf planners reason about action models that correctly and completely capture the possible world transitions~\cite{geffner:book:2013}. Unfortunately building such models is complex even for planning experts limiting the potential of automated planning~\cite{kambhampati:modellite:AAAI2007}. 
 
-In Machine Learning (ML) models are not hand-coded but computed from examples~\cite{michalski2013machine}. Applying off-the-shelf ML to learning planning action models is not straightforward though. On the one hand the inputs of ML algorithms are usually objects features encoded as a finite set of values. Planning tasks include actions and are closer to the representation of procedures and behaviours than to object representation. On the other hand, the traditional output of off-the-shelf ML techniques is a scalar value (an integer, in the case of classification tasks, or a real value, in the case of regression tasks). For the task of learning classical planning actions the output is not a scalar but a declarative generative model of the state transitions. Finally the collection of {\em informative} examples for learning planning action models is complex. Planning actions include preconditions that are only satisfied by specific sequences of actions and often with a low probability of being chosen by chance~\cite{fern2004learning}.
+Machine Learning (ML) is able to compute models from examples~\cite{michalski2013machine} but applying off-the-shelf ML to learning planning action models is not straightforward. First, the inputs of ML algorithms are usually a finite set of values encoding some features of objects. Planning tasks include actions and are closer to the representation of procedures and behaviours than to object representation. Second, the traditional output of off-the-shelf ML techniques is a scalar value (an integer, in the case of classification tasks, or a real value, in the case of regression tasks). The output for learning classical planning actions is not a scalar but a declarative generative model of the possible state transitions. Last but not least, the collection of {\em informative} examples for learning planning action models is challenging. Planning actions include preconditions that are only satisfied by specific sequences of actions and often with a low probability of being chosen by chance~\cite{fern2004learning}.
 
-The learning of action models for classical planners is a well-studied problem and there are sophisticated algorithms for this learning task, like ARMS~\cite{yang2007learning} or LOCM~\cite{cresswell2013acquiring} that do not require the full knowledge of the states traversed by example plans. This work aims going one step beyond these approaches and address learning classical planning action models when the only available knowledge is pairs of initial and final states.
-
-Motivated by recent advances on learning generative models using classical planners~\cite{segovia2017generating} and on the effective exploration of planning state spaces~\cite{geffner:novelty:IJCAI17}, this paper introduces an innovative approach for learning classical planning action models. The contribution of the work is two-fold:
+Learning classical planning action models is a well-studied problem with sophisticated algorithms, like ARMS~\cite{yang2007learning} or LOCM~\cite{cresswell2013acquiring} that do not require the full knowledge of all the states traversed by an example plan. Motivated by recent advances on learning generative models using classical planners~\cite{segovia2017generating} and on the effective exploration of planning state spaces~\cite{geffner:novelty:IJCAI17}, this paper aims introducing an innovative approach for learning classical planning action models. The contribution of the work is two-fold:
 \begin{enumerate}
 \item An inductive learning algorithm that minimizes the required input knowledge, that is flexible to different levels of available input knowledge, and that can be defined as a classical planning compilation. 
 \item A method for autonomously collect {\em informative} examples for action model learning using an exploration-based classical planner.
@@ -97,13 +95,13 @@ This section defines the planning models used on this work.
 \subsection{Classical Planning}
 We use $F$ to denote the set of {\em fluents} (propositional variables) describing a state. A {\em literal} $l$ is a valuation of a fluent $f\in F$, i.e.~$l=f$ or $l=\neg f$. A set of literals $L$ represents a partial assignment of values to fluents (WLOG we assume that $L$ does not assign conflicting values to any fluent). We use $\mathcal{L}(F)$ to denote the set of all literal sets on $F$, i.e.~all partial assignments of values to fluents. A {\em state} $s$ is a total assignment of values to fluents, i.e. $|s|=|F|$, so the number of states is $2^{|F|}$. 
 
-Under this formalism, a {\em classical planning frame} is a tuple $\Phi=\tup{F,A}$, where $F$ is a set of fluents and $A$ is a set of actions. Each action $a\in A$ has a set of literals $\pre(a)\in\mathcal{L}(F)$ called the {\em preconditions}, a set of positive effects $\add(a)\in\mathcal{L}(F)$ and a set of negative effects $\del(a)\in\mathcal{L}(F)$. An action $a\in A$ is applicable in state $s$ iff $\pre(a)\subseteq s$, and the result of applying $a$ in $s$ is a new state $\theta(s,a)=(s\setminus \neg\del(a))\cup\add(a)$.
+A {\em classical planning frame} is a tuple $\Phi=\tup{F,A}$, where $F$ is a set of fluents and $A$ is a set of actions. Each action $a\in A$ has a set of literals $\pre(a)\in\mathcal{L}(F)$ called the {\em preconditions}, a set of positive effects $\add(a)\in\mathcal{L}(F)$ and a set of negative effects $\del(a)\in\mathcal{L}(F)$. An action $a\in A$ is applicable in state $s$ iff $\pre(a)\subseteq s$, and the result of applying $a$ in $s$ is a new state $\theta(s,a)=(s\setminus \neg\del(a))\cup\add(a)$.
 
-Given a planning frame $\Phi=\tup{F,A}$, a {\em classical planning problem} is a tuple $P=\tup{F,A,I,G}$, where $I$ is an initial state and $G\in\mathcal{L}(F)$ is a goal condition. A {\em plan} for $P$ is an action sequence $\pi=\tup{a_1, \ldots, a_n}$ that induces a state sequence $\tup{s_0, s_1, \ldots, s_n}$ such that $s_0=I$ and, for each $i$ such that {\small $1\leq i\leq n$}, $a_i$ is applicable in $s_{i-1}$ and generates the successor state $s_i=\theta(s_{i-1},a_i)$. The plan $\pi$ {\em solves} $P$ if and only if $G\subseteq s_n$, i.e.~if the goal condition is satisfied following the application of $\pi$ in $I$.
+A {\em classical planning problem} is a tuple $P=\tup{F,A,I,G}$, where $I$ is an initial state and $G\in\mathcal{L}(F)$ is a goal condition. A {\em plan} for $P$ is an action sequence $\pi=\tup{a_1, \ldots, a_n}$ that induces a state sequence $\tup{s_0, s_1, \ldots, s_n}$ such that $s_0=I$ and, for each $i$ such that {\small $1\leq i\leq n$}, $a_i$ is applicable in $s_{i-1}$ and generates the successor state $s_i=\theta(s_{i-1},a_i)$. The plan $\pi$ {\em solves} $P$ if and only if $G\subseteq s_n$, i.e.~if the goal condition is satisfied following the application of $\pi$ in $I$.
 
 We assume that fluents are instantiated from predicates, as in PDDL~\cite{fox2003pddl2}. Specifically, there exists a set of predicates $\Psi$, each $p\in\Psi$ with an argument list of arity $ar(p)$. Given a set of objects $\Omega$, the set of fluents $F$ is then induced by assigning objects in $\Omega$ to the arguments of predicates in $\Psi$, i.e.~$F=\{p(\omega):p\in\Psi,\omega\in\Omega^{ar(p)}\}$ where, given a set $X$, $X^n$ is the $n$-th Cartesian power of $X$.
 
-Likewise we assume actions in $A$ are instantiated from operator schema as follows. Let us define $\Omega_v=\{var_1,\ldots,var_v\}$ as a new set of objects, $\Omega_v\cap\Omega=\emptyset$, representing variable names. The number of {\em variable} objects, $|\Omega_v|$, is given by the action with the maximum arity. For instance, in the blocksworld $\Omega_v=\{var_1,var_2\}$ since action $stack$, Figure~\ref{fig:stack}, (and $unstack$) has two parameters. Let us define a new set of fluents, $F_{v}\cap F=\emptyset$, that result instantiating $\Psi$ but using only the variable objects in $\Omega_v$.
+Likewise we assume that actions in $A$ are instantiated from operator schema as follows. Let us define $\Omega_v=\{v_1,\ldots,v_v\}$ as a new set of objects, $\Omega_v\cap\Omega=\emptyset$, representing variable names. The number of {\em variable} objects, $|\Omega_v|$, is given by the action with the maximum arity. For instance, in the blocksworld $\Omega_v=\{v_1,v_2\}$ since actions $stack$ (Figure~\ref{fig:stack}) and $unstack$ have two parameters. Let us define a new set of fluents, $F_{v}\cap F=\emptyset$, that result instantiating $\Psi$ but using only the variable objects in $\Omega_v$.
 
 \begin{figure}[hbt]
 \begin{footnotesize}
@@ -131,7 +129,9 @@ Now we are ready to define an operator schema $\xi\in \Xi$ as:
 
 
 \subsection{Classical Planning with Conditional Effects}
-Conditional effects make it possible to repeatedly refer to the same action even though their precise effects depend on the current state. In this case each action $a\in A$ has a set of literals $\pre(a)\in\mathcal{L}(F)$ called the {\em precondition} and a set of conditional effects $\cond(a)$. Each conditional effect $C\rhd E\in\cond(a)$ is composed of two sets of literals $C\in\mathcal{L}(F)$ (the condition) and $E\in\mathcal{L}(F)$ (the effect). An action $a\in A$ is applicable in state $s$ if and only if $\pre(a)\subseteq s$, and the resulting set of {\em triggered effects} is
+Conditional effects make it possible to repeatedly refer to the same action even though their precise effects depend on the current state. This feature is useful to define our compilation for learning classical planning action models using a classical planner.
+
+In this case each action $a\in A$ has a set of literals $\pre(a)\in\mathcal{L}(F)$ called the {\em precondition} and a set of conditional effects $\cond(a)$. Each conditional effect $C\rhd E\in\cond(a)$ is composed of two sets of literals $C\in\mathcal{L}(F)$ (the condition) and $E\in\mathcal{L}(F)$ (the effect). An action $a\in A$ is applicable in state $s$ if and only if $\pre(a)\subseteq s$, and the resulting set of {\em triggered effects} is
 \[
 \eff(s,a)=\bigcup_{C\rhd E\in\cond(a),C\subseteq s} E,
 \]
@@ -139,42 +139,43 @@ i.e.~effects whose conditions hold in $s$. The result of applying $a$ in $s$ is 
 
 
 \section{Learning classical planning action models}
-This section formalizes the different learning tasks addressed in the paper according to the available amount of input knowledge.
+This section formalizes the different learning tasks addressed in the paper according to the available input knowledge.
 
-The largest possible amount of available input knowledge is learning from the {\em pre-} and {\em post-states} of every action execution. This learning task is straightforward since the dynamics of a given operator are derived lifting the literals that change between the pre and post-state of the corresponding action execution. The preconditions are the minimal set of literals appearing in all the pre-states corresponding to the same operator.
+On the extreme learning from the complete amount of available input knowledge, the {\em pre-} and {\em post-states} of every action execution, is straightforward. In this case the operator schema are derived lifting the literals that change between the pre and post-state of the corresponding action execution. The preconditions are derived lifting the minimal set of literals appearing in all the pre-states that correspond to the same operator.
 
 \subsubsection{Learning classical planning action models from plans}
 This task is formalized as $\Lambda=\tup{\Psi,\Pi,\Sigma}$: 
 \begin{itemize}
-\item $\Psi$ the set of predicates that define the abstract state space of a given planning domain. This set includes the predicates describing the actions header.
+\item $\Psi$ the set of predicates that define the abstract state space of a given planning domain. This set includes the predicates for describing the actions header.
 \item $\Pi=\{\pi_1,\ldots,\pi_t\}$ is the given set of example plans,
 \item $\Sigma=\{\sigma_1,,\ldots,\sigma_t\}$ is a set of labels s.t. each plan $\pi_i$, {\small $1\leq i\leq t$}, has an associated label $\sigma_i=(s_i,s_i')$ where $s_i'$ is the state resulting from executing $\pi_i$ starting from the state $s_i$. 
 \end{itemize}
 
-A solution to the learning task $\Lambda$ is a set of operator schema $\Xi$ that is compliant with the predicates in $\Psi$, the example plans $\Pi$, and their labels $\Sigma$.
+A solution to the learning task $\Lambda$ is a set of operator schema $\Xi$ compliant with the predicates in $\Psi$, the example plans $\Pi$, and their labels $\Sigma$.
 
 %\subsubsection{Learning classical planning action models from partially specified plans}
 
 \subsubsection{Learning classical planning action models from states}
 
-As explained in this paper we aim to reduce the amount of input knowledge provided to the learning task so we redefine it as $\Lambda'=\tup{\Psi,\Sigma}$.
+As explained in this paper we aim to reduce the amount of input knowledge provided to the learning task so we redefine the previous tasks as $\Lambda'=\tup{\Psi,\Sigma}$.
 
 A solution to the $\Lambda'$ learning task is a set of operator schema $\Xi$ that is compliant with the predicates in $\Psi$, and the given set of initial and final states.
 
 
-\section{Learning action models from states using a classical planner}
-Our approach for addressing $\Lambda'=\tup{\Psi,\Sigma}$ is compiling this learning task into a classical planning task $P_{\Lambda}$. The intuition behind the compilation is that a solution to $P_{\Lambda}$ is a sequence of actions that first, programs the action action model (i.e. the $pre(\xi)$, $del(\xi)$ and $add(\xi)$ for each $\xi\in\Xi$) and then, sequentially, validates the programmed action model in the given set of labels $\Sigma$, one after the other.
+\section{Learning action models from example states using a classical planner}
+Our approach for addressing $\Lambda'=\tup{\Psi,\Sigma}$ is compiling this learning task into a classical planning task $P_{\Lambda}$. The intuition behind the compilation is that a solution to $P_{\Lambda}$ is a sequence of actions that first, programs the action model (i.e. the $pre(\xi)$, $del(\xi)$ and $add(\xi)$ for each $\xi\in\Xi$) and then, validates the programmed action model in the given set of labels $\Sigma$, one after the other.
 
-To formalize the compilation we first define $t$ classical planning instances $P_1=\tup{F,A,I_1,G_1},\ldots,P_t=\tup{F,A,I_t,G_t}$, that belong to the same planning frame $\Phi=\tup{F,A}$ (i.e. share the same fluents and actions and differ only in the initial state and goals). The sets of actions is empty $A=\emptyset$ while the set of fluents $F$ is built instantiating the predicates in $\Psi$ with the objects in $\Omega$, where $\Omega$, is the set of objects that appear in the states in $\Sigma$, i.e., $\Omega=\{o|o\in s_i\cup s_i', {\small 1\leq i\leq t}\}$. Finally the initial state $I_i$, {\small $1\leq i\leq t$}, is given by the state $s_i\in \sigma_i$ and the goals are defined by the state $s_i'\in \sigma_i$. 
+To formalize the compilation we first define $t$ classical planning instances $P_1=\tup{F,A,I_1,G_1},\ldots,P_t=\tup{F,A,I_t,G_t}$, that belong to the same planning frame $\Phi=\tup{F,A}$ (i.e. share the same fluents and actions and differ only in the initial state and goals). The set of actions is empty $A=\emptyset$ while the set of fluents $F$ is built instantiating the predicates in $\Psi$ with the objects in $\Omega=\{o|o\in s_i\cup s_i', {\small 1\leq i\leq t}\}$, the set of objects that appear in the states in $\Sigma$. Finally the initial state $I_i$, {\small $1\leq i\leq t$}, is given by the state $s_i\in \sigma_i$ and the goals are defined by the state $s_i'\in \sigma_i$. 
 
 Now we are ready to define the compilation for learning action models using an off-the-shelf classical planner. Given a learning task $\Lambda'=\tup{\Psi,\Sigma}$ the compilation outputs a classical planning task $P_{\Lambda}=\tup{F_{\Lambda},A_{\Lambda},I_{\Lambda},G_{\Lambda}}$:
 \begin{itemize}
 \item $F_{\Lambda}$ extends $F$ with:
 \begin{itemize}
-\item Fluents representing the programmed action model: $header(\xi)$, $pre_f(\xi)$, $del_f(\xi)$ and $add_f(\xi)$ where $f\in F_v$ and $\xi \in \Xi$.
+\item Fluents representing the operator header $header(name(\xi),pars(\xi))$ with $pars(\xi)\in\Omega_v^{ar(\xi)}$ for $\xi \in \Xi$. 
+\item Fluents representing the programmed action model: $pre_f(\xi)$, $del_f(\xi)$ and $add_f(\xi)$ where $f\in F_v$ and $\xi \in \Xi$.
 \item Fluents $\{test_i\}_{1\leq i\leq t}$, indicating the example where the programmed model is currently being validated.
 \end{itemize}
-\item $I_{\Lambda}$, contains the fluents from $F$ that encode the initial state $s_1\in P_1$ and the header of the operators we want to learn.
+\item $I_{\Lambda}$, contains the fluents from $F$ that encode the initial state $s_1\in P_1$ and the header of the operators we want to learn. For instance, for learning the action model of the blocksworld these headers are {\small $\{pickup(v_1),putdown(v_1),unstack(v_1,v_2),stack(v_1,v_2)\}$}.
 \item $G_{\Lambda}=\{test_i\}$,{\small $1\leq i\leq t$}, indicates that the programmed action model is validated in all the examples.
 \item $A_{\Lambda}$ replaces the actions in $A$ with actions of three types:
 \begin{enumerate}
@@ -183,36 +184,38 @@ Now we are ready to define the compilation for learning action models using an o
 \item A {\em precondition} $f\in F_v$ in the action schema $\xi\in\Xi$:
 \begin{small}
 \begin{align*}
-\hspace*{7pt}\pre(\mathsf{programPre_{\xi,f}})=&\{\neg pre_{f}(\xi),\neg del_{f}(\xi),\neg add_{f}(\xi)\},\\    
-\cond(\mathsf{programPre_{\xi,f}})=&\{\emptyset\}\rhd\{pre_{f}(\xi)\}.
+\hspace*{7pt}\pre(\mathsf{programPre_{f,\xi}})=&\{\neg pre_{f}(\xi),\neg del_{f}(\xi),\neg add_{f}(\xi)\},\\    
+\cond(\mathsf{programPre_{f,\xi}})=&\{\emptyset\}\rhd\{pre_{f}(\xi)\}.
 \end{align*}
 \end{small}
 \item A {\em negative effect} $f\in F_v$ in the action schema $\xi\in\Xi$:
 \begin{small}
 \begin{align*}
-\hspace*{7pt}\pre(\mathsf{programDel_{\xi,f}})=&\{pre_{f}(\xi),\neg del_{f}(\xi),\neg add_{f}(\xi)\},\\                                                   
-\cond(\mathsf{programDel_{\xi,f}})=&\{\emptyset\}\rhd\{del_{f}(\xi)\}.
+\hspace*{7pt}\pre(\mathsf{programDel_{f,\xi}})=&\{pre_{f}(\xi),\neg del_{f}(\xi),\neg add_{f}(\xi)\},\\                                                   
+\cond(\mathsf{programDel_{f,\xi}})=&\{\emptyset\}\rhd\{del_{f}(\xi)\}.
 \end{align*}
 \end{small}
 
 \item A {\em positive effect} $f\in F_v$ in the action schema $\xi\in\Xi$:
 \begin{small}
 \begin{align*}
-\hspace*{7pt}\pre(\mathsf{programAdd_{\xi,f}})=&\{\neg pre_{f}(\xi)),\neg del_{f}(\xi)),\neg add_{f}(\xi)\},\\                                                   
-\cond(\mathsf{programAdd_{\xi,f}})=&\{\emptyset\}\rhd\{add_{f}(\xi)\}.
+\hspace*{7pt}\pre(\mathsf{programAdd_{f,\xi}})=&\{\neg pre_{f}(\xi)),\neg del_{f}(\xi)),\neg add_{f}(\xi)\},\\                                                   
+\cond(\mathsf{programAdd_{f,\xi}})=&\{\emptyset\}\rhd\{add_{f}(\xi)\}.
 \end{align*}
 \end{small}
 \end{itemize}
 
-\item Actions for applying an already programmed operator schema $\xi\in\Xi$ and that is bound with objects $\upsilon'\in\Omega^{ar(\xi)}$)
+\item Actions for applying an already programmed operator schema $\xi\in\Xi$ bounding it with objects $\omega\subseteq\Omega$
 \begin{small}
 \begin{align*}
-\hspace*{7pt}\pre(\mathsf{apply_{\xi,\upsilon,\upsilon'}})=&\{header(\xi)\}\cup\\     
-                                           &\{pre_{f}(\xi)\implies p(\upsilon')\}_{\forall p\in\Psi},\\
-\cond(\mathsf{apply_{\xi,\upsilon,\upsilon'}})=&\{del_{f}(\xi)\}\rhd\{\neg p(\upsilon')\}_{\forall p\in\Psi},\\
-&\{add_{f}(\xi)\}\rhd\{p(\upsilon')\}_{\forall p\in\Psi}.
+\hspace*{7pt}\pre(\mathsf{apply_{\xi,\omega}})=&\{header(name(\xi),pars(\xi))\}\cup\\     
+                                           &\{pre_{f}(\xi)\implies p(\omega)\}_{\forall p\in\Psi,f=p(pars(\xi))},\\
+\cond(\mathsf{apply_{\xi,\upsilon,\upsilon'}})=&\{del_{f}(\xi)\}\rhd\{\neg p(\omega)\}_{\forall p\in\Psi,f=p(pars(\xi))},\\
+&\{add_{f}(\xi)\}\rhd\{p(\omega)\}_{\forall p\in\Psi,f=p(pars(\xi))}.
 \end{align*}
 \end{small}
+
+%p(\omega):p\in\Psi,\omega\in\Omega^{ar(p)}
 
 \item Actions for changing the active example where the action model is currently being validated.
 \begin{small}
@@ -230,25 +233,25 @@ Any classical plan $\pi$ that solves $P_{\Lambda}$ induces a valid action model 
 \end{lemma}
 
 \begin{proof}[Proof sketch]
-Once an operator schema is programmed it cannot be modified and can only be executed. The only way of achieving a test fluent is by applying a sequence of programmed operator schema until achieving the goal state in its associated label. If this is done for all the input examples it means that the programmed action model is compliant with the learning input knowledge and hence, that solves the action model learning task.
+Once an operator schema is programmed it cannot be modified and can only be applied. The only way of achieving a test fluent is by applying a sequence of programmed operator schema until achieving the goal state in its associated label starting from the initial state of the corresponding label. If this is done for all the input examples it means that the programmed action model is compliant with the learning input knowledge and hence, that solves the action model learning task.
 \end{proof}
 
-Interestingly this compilation is valid for partially specified action models since the known preconditions and effects (fluents $pre_f(\xi)$, $del_f(\xi)$ and $add_f(\xi)$) can be part of the initial state $I_{\Lambda}$. With this regard the approach allows also transfer learning in which we generate the action model for a given sub-task and then encode this model as already programmed actions for learning new or more challenging action models.
+Interestingly this compilation is valid for partially specified action models since known preconditions and effects (fluents $pre_f(\xi)$, $del_f(\xi)$ and $add_f(\xi)$) can be part of the initial state $I_{\Lambda}$. With this regard the approach allows also transfer learning in which we generate the action model for a given sub-task and then encode this model as already programmed actions for learning new or more challenging action models.
 
-\section{Learning action models from plans using a classical planner}
-The compilation can be extended to the learning scenario in which a set of action plans $\Pi$ is available s.t., each plan $\pi_i\in \Pi$, {\small $1\leq i\leq t$}, is a solution to the corresponding classical planning instance $P_i=\tup{F,A,I_i,G_i}$:
+\section{Learning action models from example plans using a classical planner}
+The compilation can be extended to the learning scenario defined by $\Lambda$ in which a set of action plans is also available. In this scenario each plan $\pi_i\in \Pi$, {\small $1\leq i\leq t$}, is a solution to the corresponding classical planning instance $P_i=\tup{F,A,I_i,G_i}$. The compilation extensions are: 
 \begin{itemize}
-\item $F_{\Lambda}$ includes the set of fluents $F_{plan}=\{plan(name(\xi),i,\Omega^{ar(a)})\}$ for encoding the plans in $\Pi$. Fluents $at_i$ and $next_{i,i_2}$, {\small $1\leq i<i2\leq n$}, indicate the plan step where the programmed action model is being validated and $n$ is the max length of a plan in $\Pi$.
-\item $I_{\Lambda}$ is extended with the fluents from $F_{plan}$ that encode the plan $\pi_1\in \Pi$ for solving $P_1$, and the fluents $at_1$ and $\{next_{i,i_2}\}$, {\small $1\leq i<i2\leq n$}, for indicating the plan step where to start validating the programmed model. Goals are like in the original compilation.
+\item $F_{\Lambda}$ includes the set of fluents $F_{\Pi}=\{plan(name(\xi),j,\Omega^{ar(\xi)})\}$ for encoding the $j$ steps of the {\small $1\leq i\leq t$} plans in $\Pi$ with $F_{\Pi_i}\subseteq F_{\Pi}$ the subset of fluents encoding the plan corresponding to the $i^{th}$ example. In addition fluents $at_j$ and $next_{j,j_2}$, {\small $1\leq j<j2\leq n$}, indicate the plan step where the programmed action model is being validated and $n$ is the max length of a plan in $\Pi$.
+\item $I_{\Lambda}$ is extended with the fluents from $F_{\Pi_1}$ that encode the plan $\pi_1\in \Pi$ for solving $P_1$, and the fluents $at_1$ and $\{next_{j,j_2}\}$, {\small $1\leq j<j2\leq n$}, for indicating the plan step where to start validating the programmed action model. Goals are like in the original compilation.
 \item With respect to the actions,
 \begin{enumerate}
-\item The actions for programming the preconditions and effects of a given operator schema are the same.
-\item The actions for applying an operator schema have an extra precondition $f\in F_{plan}$ s.t. $f$ encodes the current plan step and extra conditional effect $\{at_{i}\}\rhd\{\neg at_{i},at_{i+1}\}_{\forall i\in 1\leq i< n}$ for advancing the plan step.
+\item The actions for programming the preconditions/effects of a given operator schema are the same.
+\item The actions for applying an operator schema have an extra precondition $f\in F_{\Pi_i}$ s.t. $f$ encodes the current plan step and extra conditional effect $\{at_{j}\}\rhd\{\neg at_{j},at_{j+1}\}_{\forall j\in [1,n]}$ for advancing the current plan step.
 \item The actions for changing the active test have an extra precondition, $at_{|\Pi_i|}$, to indicate that we simulated the full current plan and extra conditional effects to load the next plan where to validate the programmed action model:
 \begin{small}
 \begin{align*}
-&\{\emptyset\}\rhd\{\neg plan(\xi,k,\upsilon\}_{1\leq k<|\Pi_i|},\\
-&\{\emptyset\}\rhd\{plan(\xi,k,\upsilon\}_{1\leq k<|\Pi_{i+1}|},\\
+&\{f\}\rhd\{\neg f\}_{f\in F_{\Pi_i}},\\
+&\{\emptyset\}\rhd\{f\}_{f\in F_{\Pi_i+1}},\\
 &\{\emptyset\}\rhd\{\neg at_{|\pi_i|},at_1\}.
 \end{align*}
 \end{small}
@@ -258,22 +261,38 @@ The compilation can be extended to the learning scenario in which a set of actio
 
 
 \section{Generating informative learning examples}
-Observation: If a predicate is not appearing either in the initial not in the final state it will not appear in the learned action model. 
+TBD.
+
+Observation: If a predicate is not appearing either in the initial not in the final state it will not appear in the learned action model.
+
+Question: Can we propose a search algorithm that generates states with the full diversity of predicates of a given domain? 
 
 
 \section{Evaluation}
-We evaluate the performance of our learning approach using the cardinality of the {\em symmetric difference} sets that are computed between the set of preconditions, del and add effects, in the learned model and in the actual models. This performance metric is weighted by the size of the sets so a $100\%$ value means that this set was learned perfectly and $0\%$ means that no correct learning was accomplished.
 
-The performance of our learning approach is evaluated for (1) different amounts of initial knowledge available and (2) using different sources for collecting this initial knowledge.
-
-\begin{tabular}{l|cc|cc|cc}
- & \multicolumn{2}{c|}{Prec} & \multicolumn{2}{c|}{Del} & \multicolumn{2}{c}{Add} \\\hline
-& Avg & Var & Avg & Var & Avg & Var\\\hline
-Blocks & 5.0 & 75.0 & 0.0 & 0.0 & 0.0 & 0.0\\
-Grippper& 65.5 & 150.6 & 0.0 & 0.0 & 5.1 & 14.4 \\
-Miconic& 41.3 & 482.8 & 0.0 & 0.0 & 6.3 & 41.5\\
-Visitall& 50.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0
+\subsection{Learning action models from example plans}
+\begin{table*}[!hbt]
+\begin{footnotesize}
+\begin{tabular}{l||c|c|c||c|c|c||c|c|c}
+ & \multicolumn{3}{c||}{Preconditions} & \multicolumn{3}{c||}{Del Effects} & \multicolumn{3}{c}{Add Effects} \\\hline
+ & Hand & Planner & Rand & Hand & Planner & Rand & Hand & Planner & Rand \\\hline
+Blocks & $5.00\pm 8.66$ & $58.33\pm 43.30$ & & $0.00$ & $16.70\pm 3.36$ & & $6.07\pm 6.26$ & $19.38\pm 19.40$&\\
+Grippper & $55.56\pm 7.86$ & $40.00\pm 20.00$ & & $0.00$ & $9.09$ & & $35.98\pm 26.38$ & $72.73$&\\
+Miconic & $37.62\pm 16.52$ & $61.67\pm 2.89$ & & $0.00$ & $8.33\pm 14.43$ & & $61.36\pm 13.30$ & $29.17\pm 18.16$&\\
+Visitall & $50.00$ & $100.00$ & & $0.00$ & $20.00$ & & $0.00$ & $0.00$&
 \end{tabular}
+\end{footnotesize}
+\caption{\small Mean error and standard deviation of the learned models when using hand-picked examples and examples collected using the classical planner Fast-Downward.}
+  \label{tab:eplans}
+\end{table*}
+
+The performance of our learning approach is evaluated for different levels of available input knowledge and using different sources for collecting this initial knowledge. In all the cases we assess the performance of our learning approach using the cardinality of the {\em symmetric difference} sets that are computed between the set of preconditions, del and add effects (1), in the learned model and (2), in the actual models. In all the experiments the compilation is solved using the SAT-based classical planner {\sc Madagascar}~\cite{rintanen2014madagascar}.
+
+Table~\ref{tab:eplans} shows the mean error and standard deviation of the learned models with respect to the actual action models when (1) using {\em hand-picked} examples, (2) examples collected using the classical {\em planner} {\sc Fast-Downward}~\cite{helmert2006fast} and (3) examples collected {\em randomly}. The standard deviation provides a measure of how this error is distributed among the different operators in the domain. If this deviation is 0 it means that is equally distributed in all the domain operators.
+
+
+\subsection{Learning action models from example states}
+TBD.
 
 
 \section{Related work}
@@ -287,8 +306,9 @@ Visitall& 50.0 & 0.0 & 0.0 & 0.0 & 0.0 & 0.0
 %(Amir and Chang, 2008) introduced an algorithm that tractably generates all the STRIPS-like models that  could  have  lead  to  a  set  of  observations.  Given  a  formula  representing  the  initial  belief  state,  a sequence of executed actions and the corresponding observed states(where partial observations of states are given), it builds a complete explanation of observations by models of actions through a Conjunctive Normal Form (CNF) formula. By linking the possible states of fluents to the effect propositions in the action models, the complexity of the CNF encoding can be controlled to find  exact  solutions  efficiently  in  some  circumstances.  The  learning  algorithm  updates  the  formula  of the belief state with every action and observation in the sequence. This update makes sure that the new formula represents all the transition relations consistent with the actions and observations. The formula returned at the end includes all consistent models, which can then be retrieved with additional processing. Unlike the previous approaches, the one described in (Mour ao et al., 2008) deals with both missing and noisy predicates in the observations. For each action in a given domain, they use kernel perceptrons to learn predictions of the domain properties that change because of the action execution. LOCM (Cresswellet al., 2009) induces action schemas without being provided with any information about initial, goal or intermediate state descriptions for the example action sequences. LOCM receives descriptions of plans or plan fragments, uses them to create states machines for the different domain objects and extracts the action schemas from these state machines.
 
 \section{Conclusions}
+This paper presents a novel approach for learning classical planning action models from minimal input knowledge and using exclusively existing classical planners. Using classical planning focus the learning task in the more succinct action models given that classical planners have a preference for short plans.
 
-Learning action models from examples allows the reformulation of a domain theory. Using classical planning focus the learning task in the more succinct action models given that classical planners have a preference for short plans.
+Learning action models from examples allows the reformulation of a domain theory. An interesting research direction is the study of domain reformulation using features that allow more compact solutions like the {\em reachable} or {\em movable} features in the Sokoban domain.
 
 \bibliographystyle{aaai}
 \bibliography{bootstrap-learning}
