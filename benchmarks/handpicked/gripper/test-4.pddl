@@ -13,15 +13,15 @@
           (gripper left)
           (gripper right)
 	  
-          (at ball3 roomb)
-          (at ball2 roomb)
+          (at ball3 rooma)
+          (at ball2 rooma)
           (at ball1 roomb)
           (at ball4 roomb)	 	  
 	  
           (free left)
           (free right)
 	  
-          (at-robby roomb)
+          (at-robby rooma)
 	  )
 	  
    (:goal (and
@@ -55,12 +55,12 @@
           (at ball3 rooma)
           (at ball2 rooma)
           (not (at ball1 rooma))
-          (not (at ball4 rooma))	  
+          (at ball4 rooma)
 	  
-          (at ball1 roomb)
+          (not (at ball1 roomb))
           (not (at ball2 roomb))
           (not (at ball3 roomb))	  	  
-          (at ball4 roomb)
+          (not (at ball4 roomb))
 
 	  (not (at rooma rooma))
 	  (not (at rooma roomb))
@@ -104,7 +104,7 @@
 	  (not (at right left))
 	  (not (at right right))
 	  
-          (free left)
+          (not (free left))
           (free right)
 
 	  (not (free rooma))
@@ -170,7 +170,7 @@
 	  (not (carry right left))
 	  (not (carry right right))
 
-	  (not (carry ball1 left))
+	  (carry ball1 left)
 	  (not (carry ball2 left))
 	  (not (carry ball3 left))	  
 	  (not (carry ball4 left))
@@ -180,8 +180,8 @@
 	  (not (carry ball3 right))
 	  (not (carry ball4 right))	  
 	  
-          (at-robby rooma)
-          (not (at-robby roomb))
+          (at-robby roomb)
+          (not (at-robby rooma))
 	  (not (at-robby ball1))
 	  (not (at-robby ball2))
 	  (not (at-robby ball3))
