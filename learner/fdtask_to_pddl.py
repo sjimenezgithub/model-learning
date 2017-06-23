@@ -41,7 +41,7 @@ def format_domain(task,domain):
    str_out = str_out + " (:predicates "
    for i in task.predicates:
       if i.name != "=":
-         str_out = str_out + "(" + i.name 
+         str_out = str_out + "(" + i.name         
          for j in i.arguments:
             str_out = str_out + " " + j.name + " - " + j.type_name
          str_out = str_out + ")"

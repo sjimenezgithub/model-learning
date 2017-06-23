@@ -310,7 +310,10 @@ for line in file:
       indexp= [str(p[0]) for p in predicates].index(pred[0])
       if len(predicates[indexp])==2 and len(actions[indexa])==2:
          pred = pred + ["var1"]
-      pres[indexa].append(pred)
+
+      for index in range(0,len(actions)):
+         if (actions[index][0]==action[0]) and (not pred in pres[index]):
+            pres[index].append(pred)
 
    keys="(program_del_"
    if keys in line:
@@ -321,7 +324,10 @@ for line in file:
       indexp= [str(p[0]) for p in predicates].index(delp[0])
       if len(predicates[indexp])==2 and len(actions[indexa])==2:
          delp = delp + ["var1"]
-      dels[indexa].append(delp)               
+
+      for index in range(0,len(actions)):
+         if (actions[index][0]==action[0]) and (not delp in dels[index]):
+            dels[index].append(delp)
 
    keys="(program_add_"
    if keys in line:
@@ -332,7 +338,10 @@ for line in file:
       indexp= [str(p[0]) for p in predicates].index(addp[0])      
       if len(predicates[indexp])==2 and len(actions[indexa])==2:
          addp = addp + ["var1"]
-      adds[indexa].append(addp)         
+
+      for index in range(0,len(actions)):
+         if (actions[index][0]==action[0]) and (not addp in adds[index]):
+            adds[index].append(addp)         
 file.close()
 
 
@@ -375,5 +384,4 @@ for action in actions:
 fdomain=open("learned_domain.pddl","w")
 fdomain.write(fdtask_to_pddl.format_domain(new_fd_task,fd_domain))
 fdomain.close()
-
 sys.exit(0)

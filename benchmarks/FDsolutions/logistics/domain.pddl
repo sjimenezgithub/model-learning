@@ -1,16 +1,19 @@
-;; logistics domain
+;; logistics domain Typed version.
 ;;
 
 (define (domain logistics)
-  (:requirements :strips) 
-  (:predicates 	(package ?obj)
-	       	(truck ?truck)
-		(airplane ?airplane)
-                (airport ?airport)
-               	(location ?loc)
-		(in-city ?obj ?city)
-                (city ?city)
-		(at ?obj ?loc)
-		(in ?obj ?obj))
-		
+  (:requirements :strips :typing) 
+  (:types truck
+          airplane - vehicle
+          package
+          vehicle - physobj
+          airport
+          location - place
+          city
+          place 
+          physobj - object)
+  
+  (:predicates 	(in-city ?loc - place ?city - city)
+		(at ?obj - physobj ?loc - place)
+		(in ?pkg - package ?veh - vehicle))
 )

@@ -32,9 +32,11 @@ del_errors=[]
 del_totals=[]
 add_errors=[]
 add_totals=[]
+names=[]
 for a1 in fd_ref_task.actions:
    for a2 in fd_eva_task.actions:
       if a1.name==a2.name:
+         names=names + [a1.name]
          # Computing error in preconditions
          pre_error=0
          lena1=0
@@ -120,7 +122,7 @@ pre_err=[]
 del_err=[]
 add_err=[]
 for i in range(0,len(pre_errors)):
-   print "Action: " + fd_ref_task.actions[i].name
+   print "Action: " + names[i]
    if pre_totals[i] == 0:
       error=0
    else:
