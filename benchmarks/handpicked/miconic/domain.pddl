@@ -1,23 +1,13 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Domain model to learn a 4 op-miconic 
-;;; from example plans
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (define (domain miconic)
   (:requirements :strips)
-  
+  (:types floor person)
 
-(:predicates 
-  (origin ?person ?floor )
-  (floor ?floor)
-  (passenger ?passenger)
-  (destin ?person ?floor )
-  (above ?floor1 ?floor2 )
-  (boarded ?person )
-  (served ?person )
-  (lift-at ?floor )
+(:predicates
+  (origin ?p - person ?f - floor)
+  (destin ?p - person ?f - floor)  
+  (above ?f1 ?f2 - floor)
+  (boarded ?p - person)
+  (served ?p - person)
+  (lift-at ?f - floor)
 )
-
 )
-
-

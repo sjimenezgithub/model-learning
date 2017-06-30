@@ -13,3 +13,5 @@ PLANNER_PATH = "/home/sjimenez/data/software/madagascar/"
 
 ./evaluator.py ../benchmarks/reference/blocks/domain.pddl learned_domain.pddl ../benchmarks/handpicked/blocks/test-1.pddl
 ./evaluator.py ../benchmarks/reference/visitall/domain.pddl learned_domain.pddl ../benchmarks/handpicked/visitall/test-1.pddl
+./evaluator.py ../benchmarks/reference/gripper/domain.pddl learned_domain.pddl ../benchmarks/handpicked/gripper/test-1.pddl
+./evaluator.py ../benchmarks/reference/miconic/domain.pddl learned_domain.pddl ../benchmarks/handpicked/miconic/test-1.pddl
