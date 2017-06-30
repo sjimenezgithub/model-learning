@@ -15,7 +15,7 @@ except:
    sys.exit(-1)
 
 SOURCES = ["handpicked","FDsolutions"]   
-domains= ["blocks", "gripper", "miconic", "visitall", "logistics", "zenotravel", "pegsol"]
+domains= ["blocks", "gripper", "miconic", "visitall"]
 
 str_out = ""
 for s in SOURCES:

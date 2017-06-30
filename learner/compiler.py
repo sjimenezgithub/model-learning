@@ -56,6 +56,17 @@ def get_predicates_schema_from_plans(task):
       preds = preds + [item]
    return preds
 
+def possible_pred_for_action(p,a,tup):
+   if (len(p)> len(a)):
+      return False
+   for typename in p[1:]:
+      if not str(typename) in a:
+         return False
+   for i in range(0,len(tup)):
+      if not str(a[int(tup[i])]) in str(p[i+1]):
+         return False      
+   return True
+
 
 
 #**************************************#
@@ -210,38 +221,37 @@ for a in old_actions:
    
 # Actions for programming the action schema
 for a in old_actions:
+   var_ids=[]
+   for i in range(1,len(a)):
+      var_ids=var_ids+[""+str(i)]   
    for p in predicates:
-      if (len(p)<= len(a)):
-         params=[pddl.pddl_types.TypedObject("?x"+str(i),"var") for i in range(1,len(p))]
-         vars = ["?x"+str(i) for i in range(1,len(p))]
+      for tup in itertools.product(var_ids, repeat=(len(p)-1)):
+         if possible_pred_for_action(p,a,tup):       
+            vars = ["var"+str(t) for t in tup]
+            params = []
+            pre = []
+            pre = pre + [pddl.conditions.Atom("programming",[])]      
+            pre = pre + [pddl.conditions.NegatedAtom("pre_"+p[0]+"_"+a[0],vars)]
+            pre = pre + [pddl.conditions.NegatedAtom("del_"+p[0]+"_"+a[0],vars)]   
+            pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],vars)]      
+            eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("pre_"+p[0]+"_"+a[0],vars))]
+            fd_task.actions.append(pddl.actions.Action("program_pre_"+p[0]+"_"+a[0]+"_"+"_".join(map(str,vars)),params,len(params),pddl.conditions.Conjunction(pre),eff,0))
 
-         if (len(p) == 2) and (len(a) == 2):
-            params=[]
-            vars = ["var1"]            
+            pre = []
+            pre = pre + [pddl.conditions.Atom("programming",[])]      
+            pre = pre + [pddl.conditions.Atom("pre_"+p[0]+"_"+a[0],vars)]
+            pre = pre + [pddl.conditions.NegatedAtom("del_"+p[0]+"_"+a[0],vars)]            
+            pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],vars)]         
+            eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("del_"+p[0]+"_"+a[0],vars))]   
+            fd_task.actions.append(pddl.actions.Action("program_del_"+p[0]+"_"+a[0]+"_"+"_".join(map(str,vars)),params,len(params),pddl.conditions.Conjunction(pre),eff,0))
 
-         pre = []
-         pre = pre + [pddl.conditions.Atom("programming",[])]      
-         pre = pre + [pddl.conditions.NegatedAtom("pre_"+p[0]+"_"+a[0],vars)]
-         pre = pre + [pddl.conditions.NegatedAtom("del_"+p[0]+"_"+a[0],vars)]   
-         pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],vars)]      
-         eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("pre_"+p[0]+"_"+a[0],vars))]
-         fd_task.actions.append(pddl.actions.Action("program_pre_"+p[0]+"_"+a[0],params,len(params),pddl.conditions.Conjunction(pre),eff,0))
-
-         pre = []
-         pre = pre + [pddl.conditions.Atom("programming",[])]      
-         pre = pre + [pddl.conditions.Atom("pre_"+p[0]+"_"+a[0],vars)]
-         pre = pre + [pddl.conditions.NegatedAtom("del_"+p[0]+"_"+a[0],vars)]            
-         pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],vars)]         
-         eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("del_"+p[0]+"_"+a[0],vars))]   
-         fd_task.actions.append(pddl.actions.Action("program_del_"+p[0]+"_"+a[0],params,len(params),pddl.conditions.Conjunction(pre),eff,0))
-
-         pre = []
-         pre = pre + [pddl.conditions.Atom("programming",[])]      
-         pre = pre + [pddl.conditions.NegatedAtom("pre_"+p[0]+"_"+a[0],vars)]
-         pre = pre + [pddl.conditions.NegatedAtom("del_"+p[0]+"_"+a[0],vars)]            
-         pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],vars)]            
-         eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("add_"+p[0]+"_"+a[0],vars))]      
-         fd_task.actions.append(pddl.actions.Action("program_add_"+p[0]+"_"+a[0],params,len(params),pddl.conditions.Conjunction(pre),eff,0))
+            pre = []
+            pre = pre + [pddl.conditions.Atom("programming",[])]      
+            pre = pre + [pddl.conditions.NegatedAtom("pre_"+p[0]+"_"+a[0],vars)]
+            pre = pre + [pddl.conditions.NegatedAtom("del_"+p[0]+"_"+a[0],vars)]            
+            pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],vars)]            
+            eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("add_"+p[0]+"_"+a[0],vars))]      
+            fd_task.actions.append(pddl.actions.Action("program_add_"+p[0]+"_"+a[0]+"_"+"_".join(map(str,vars)),params,len(params),pddl.conditions.Conjunction(pre),eff,0))
 
          
 # Actions for programming the tests
@@ -300,16 +310,16 @@ pres = [[] for _ in xrange(len(actions))]
 dels = [[] for _ in xrange(len(actions))]
 adds = [[] for _ in xrange(len(actions))]
 file = open(OUTPUT_FILENAME, 'r')
-for line in file:
+for line in file:   
    keys="(program_pre_"
    if keys in line:
       aux = line.replace("\n","").replace(")","").split(keys)[1].split(" ")
       action = aux[0].split("_")[1:]+aux[1:]
-      indexa = [a[0] for a in actions].index(action[0])      
-      pred = [aux[0].split("_")[0]]+aux[1:]
+      indexa = [a[0] for a in actions].index(action[0])
+      pred = [aux[0].split("_")[0]]
+      if [aux[0].split("_")[2:]][0]!=['']:
+         pred = pred + [aux[0].split("_")[2:]][0]
       indexp= [str(p[0]) for p in predicates].index(pred[0])
-      if len(predicates[indexp])==2 and len(actions[indexa])==2:
-         pred = pred + ["var1"]
 
       for index in range(0,len(actions)):
          if (actions[index][0]==action[0]) and (not pred in pres[index]):
@@ -320,10 +330,10 @@ for line in file:
       aux = line.replace("\n","").replace(")","").split(keys)[1].split(" ")
       action = aux[0].split("_")[1:]+aux[1:]
       indexa = [a[0] for a in actions].index(action[0])      
-      delp = [aux[0].split("_")[0]]+aux[1:]
+      delp = [aux[0].split("_")[0]]
+      if [aux[0].split("_")[2:]][0]!=['']:
+         delp = delp + [aux[0].split("_")[2:]][0]      
       indexp= [str(p[0]) for p in predicates].index(delp[0])
-      if len(predicates[indexp])==2 and len(actions[indexa])==2:
-         delp = delp + ["var1"]
 
       for index in range(0,len(actions)):
          if (actions[index][0]==action[0]) and (not delp in dels[index]):
@@ -334,10 +344,10 @@ for line in file:
       aux = line.replace("\n","").replace(")","").split(keys)[1].split(" ")
       action = aux[0].split("_")[1:]+aux[1:]
       indexa = [a[0] for a in actions].index(action[0])      
-      addp = [aux[0].split("_")[0]]+aux[1:]
+      addp = [aux[0].split("_")[0]]
+      if [aux[0].split("_")[2:]][0]!=['']:
+         addp = addp + [aux[0].split("_")[2:]][0]            
       indexp= [str(p[0]) for p in predicates].index(addp[0])      
-      if len(predicates[indexp])==2 and len(actions[indexa])==2:
-         addp = addp + ["var1"]
 
       for index in range(0,len(actions)):
          if (actions[index][0]==action[0]) and (not addp in adds[index]):
