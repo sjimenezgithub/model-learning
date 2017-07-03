@@ -118,24 +118,28 @@ predicates = get_predicates_schema_from_plans(fd_task)
 
 
 # Compilation Problem
-fd_task.init.append(pddl.conditions.Atom("programming",[]))
+fd_task.init.append(pddl.conditions.Atom("programming1",[]))
+allpres=[]
+for a in actions: # All possible preconditions are initially programmed
+   var_ids=[]
+   for i in range(1,len(a)):
+      var_ids=var_ids+[""+str(i)]   
+   for p in predicates:
+      for tup in itertools.product(var_ids, repeat=(len(p)-1)):
+         if possible_pred_for_action(p,a,tup):       
+            vars = ["var"+str(t) for t in tup]         
+            fd_task.init.append(pddl.conditions.Atom("pre_"+p[0]+"_"+a[0],vars))
+            allpres = allpres + [str("pre_"+p[0]+"_"+a[0]+"_"+"_".join(map(str,vars)))]
+
 if input_level <= INPUT_LENPLAN:               
-   fd_task.init.append(pddl.conditions.Atom("current",["i1"])) 
    for i in range(1,MAX_STEPS+1):
       fd_task.init.append(pddl.conditions.Atom("next",["i"+str(i),"i"+str(i+1)]))
-
-if input_level <= INPUT_STEPS:
-   for i in range(0,len(plans[0])):
-      action=plans[0][i]
-      name=action[1:-1].split(" ")[0]
-      params=action[1:-1].split(" ")[1:]
-      fd_task.init.append(pddl.conditions.Atom("plan-"+name,["i"+str(i+1)]+params))
+            
 
 goals = []
 for i in range(0,len(plans)):
    goals = goals + [pddl.conditions.Atom("test"+str(i+1),[""])]
 fd_task.goal=pddl.conditions.Conjunction(goals)
-
                
 # Compilation Domain
 fd_task.types.append(pddl.pddl_types.Type("var","None"))
@@ -149,7 +153,9 @@ if input_level <= INPUT_LENPLAN:
    for i in range(1,MAX_STEPS+2):
       fd_task.objects.append(pddl.pddl_types.TypedObject("i"+str(i),"step"))   
    
-fd_task.predicates.append(pddl.predicates.Predicate("programming",[]))
+fd_task.predicates.append(pddl.predicates.Predicate("programming1",[]))
+fd_task.predicates.append(pddl.predicates.Predicate("programming2",[]))
+fd_task.predicates.append(pddl.predicates.Predicate("executing",[]))
 for i in range(0,len(plans)):
    fd_task.predicates.append(pddl.predicates.Predicate("test"+str(i+1),[]))
 if input_level <= INPUT_LENPLAN:                  
@@ -165,8 +171,7 @@ for a in actions:
 
 if input_level <= INPUT_STEPS:   
    for a in actions:
-      fd_task.predicates.append(pddl.predicates.Predicate("plan-"+a[0],[pddl.pddl_types.TypedObject("?i","step")]+[pddl.pddl_types.TypedObject("?o"+str(i),a[i]) for i in range(1,len(a))]))   
-
+      fd_task.predicates.append(pddl.predicates.Predicate("plan-"+a[0],[pddl.pddl_types.TypedObject("?i","step")]+[pddl.pddl_types.TypedObject("?o"+str(i),a[i]) for i in range(1,len(a))]))
    
 # Original domain actions 
 old_actions = copy.deepcopy(actions)
@@ -177,7 +182,7 @@ for a in old_actions:
       params=params+[pddl.pddl_types.TypedObject("?i1","step")]
       params=params+[pddl.pddl_types.TypedObject("?i2","step")]
 
-   pre = []   
+   pre = [pddl.conditions.Atom("executing",[])]
    if input_level <= INPUT_PLANS:                        
       pre = pre + [pddl.conditions.Atom("plan-"+a[0],["?i1"]+["?o"+str(i) for i in range(1,len(a))])]
       
@@ -193,11 +198,9 @@ for a in old_actions:
             pre = pre + [disjunction]
       
    eff = []
-   eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.NegatedAtom("programming",[]))]
-
    if input_level < INPUT_STEPS:
-      eff = eff + [pddl.effects.Effect([],pddl.conditions.Atom("plan-"+a[0],["?i1"]+["?o"+str(i) for i in range(1,len(a))]),pddl.conditions.NegatedAtom("current",["?i1"]))]
-      eff = eff + [pddl.effects.Effect([],pddl.conditions.Atom("plan-"+a[0],["?i1"]+["?o"+str(i) for i in range(1,len(a))]),pddl.conditions.Atom("current",["?i2"]))]
+      eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.NegatedAtom("current",["?i1"]))]
+      eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("current",["?i2"]))]
    else:
       eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.NegatedAtom("current",["?i1"]))]
       eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("current",["?i2"]))]   
@@ -230,34 +233,52 @@ for a in old_actions:
             vars = ["var"+str(t) for t in tup]
             params = []
             pre = []
-            pre = pre + [pddl.conditions.Atom("programming",[])]      
-            pre = pre + [pddl.conditions.NegatedAtom("pre_"+p[0]+"_"+a[0],vars)]
-            pre = pre + [pddl.conditions.NegatedAtom("del_"+p[0]+"_"+a[0],vars)]   
-            pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],vars)]      
-            eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("pre_"+p[0]+"_"+a[0],vars))]
+            pre = pre + [pddl.conditions.Atom("programming1",[])]
+            pre = pre + [pddl.conditions.NegatedAtom("programming2",[])]
+            pre = pre + [pddl.conditions.NegatedAtom("executing",[])]                        
+            pre = pre + [pddl.conditions.Atom("pre_"+p[0]+"_"+a[0],vars)]   
+            eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.NegatedAtom("pre_"+p[0]+"_"+a[0],vars))]
             fd_task.actions.append(pddl.actions.Action("program_pre_"+p[0]+"_"+a[0]+"_"+"_".join(map(str,vars)),params,len(params),pddl.conditions.Conjunction(pre),eff,0))
 
             pre = []
-            pre = pre + [pddl.conditions.Atom("programming",[])]      
             pre = pre + [pddl.conditions.Atom("pre_"+p[0]+"_"+a[0],vars)]
             pre = pre + [pddl.conditions.NegatedAtom("del_"+p[0]+"_"+a[0],vars)]            
-            pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],vars)]         
-            eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("del_"+p[0]+"_"+a[0],vars))]   
+            pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],vars)]
+            pre = pre + [pddl.conditions.NegatedAtom("executing",[])]            
+            eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("del_"+p[0]+"_"+a[0],vars))]
+            eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("programming2",[]))]
             fd_task.actions.append(pddl.actions.Action("program_del_"+p[0]+"_"+a[0]+"_"+"_".join(map(str,vars)),params,len(params),pddl.conditions.Conjunction(pre),eff,0))
 
             pre = []
-            pre = pre + [pddl.conditions.Atom("programming",[])]      
             pre = pre + [pddl.conditions.NegatedAtom("pre_"+p[0]+"_"+a[0],vars)]
             pre = pre + [pddl.conditions.NegatedAtom("del_"+p[0]+"_"+a[0],vars)]            
-            pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],vars)]            
-            eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("add_"+p[0]+"_"+a[0],vars))]      
+            pre = pre + [pddl.conditions.NegatedAtom("add_"+p[0]+"_"+a[0],vars)]
+            pre = pre + [pddl.conditions.NegatedAtom("executing",[])]                        
+            eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("add_"+p[0]+"_"+a[0],vars))]
+            eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("programming2",[]))]
             fd_task.actions.append(pddl.actions.Action("program_add_"+p[0]+"_"+a[0]+"_"+"_".join(map(str,vars)),params,len(params),pddl.conditions.Conjunction(pre),eff,0))
 
          
 # Actions for programming the tests
+pre = [pddl.conditions.NegatedAtom("executing",[])]
+
+eff = []
+if input_level <= INPUT_LENPLAN:               
+   eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("current",["i1"]))]
+
+if input_level <= INPUT_STEPS:
+   for i in range(0,len(plans[0])):
+      action=plans[0][i]
+      name=action[1:-1].split(" ")[0]
+      params=action[1:-1].split(" ")[1:]
+      eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("plan-"+name,["i"+str(i+1)]+params))]
+      
+eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("executing",[]))]
+fd_task.actions.append(pddl.actions.Action("test_0",[],0,pddl.conditions.Conjunction(pre),eff,0))
+
 for i in range(0,len(plans)):   
    pre = []
-   pre = pre + [pddl.conditions.NegatedAtom("programming",[])]
+   pre = pre + [pddl.conditions.Atom("executing",[])]
    for j in range(0,len(plans)):
       if j<i:
          pre = pre + [pddl.conditions.Atom("test"+str(j+1),[])]
@@ -304,7 +325,6 @@ cmd = "rm " + OUTPUT_FILENAME + " planner_out.log;"+PLANNER_PATH+"/M aux_domain.
 print("\n\nExecuting... " + cmd)
 os.system(cmd)
 
-
 # Reading the plan output by the compilation
 pres = [[] for _ in xrange(len(actions))]
 dels = [[] for _ in xrange(len(actions))]
@@ -316,14 +336,10 @@ for line in file:
       aux = line.replace("\n","").replace(")","").split(keys)[1].split(" ")
       action = aux[0].split("_")[1:]+aux[1:]
       indexa = [a[0] for a in actions].index(action[0])
-      pred = [aux[0].split("_")[0]]
+      pred = [aux[0].split("_")[0]]      
       if [aux[0].split("_")[2:]][0]!=['']:
          pred = pred + [aux[0].split("_")[2:]][0]
-      indexp= [str(p[0]) for p in predicates].index(pred[0])
-
-      for index in range(0,len(actions)):
-         if (actions[index][0]==action[0]) and (not pred in pres[index]):
-            pres[index].append(pred)
+      allpres.remove(str("pre_"+pred[0]+"_"+action[0]+"_"+"_".join(map(str,pred[1:]))))
 
    keys="(program_del_"
    if keys in line:
@@ -354,6 +370,15 @@ for line in file:
             adds[index].append(addp)         
 file.close()
 
+for p in allpres:
+   act = p.split("_")[2]
+   pred = [p.split("_")[1]]+p.split("_")[3:]
+   if pred[1] == "":
+      pred=[pred[0]]
+   indexa = [a[0] for a in actions].index(act)
+   for index in range(0,len(actions)):
+      if (actions[index][0]==act) and (not pred in pres[index]):
+         pres[index].append(pred)
 
 counter = 0
 new_fd_task = pddl_parser.pddl_file.parsing_functions.parse_task(fd_domain, fd_problems[0])
