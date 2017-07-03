@@ -185,10 +185,10 @@ for a in old_actions:
       pre = pre + [pddl.conditions.Atom("current",["?i1"])]
       pre = pre + [pddl.conditions.Atom("next",["?i1", "?i2"])]   
    
-   for p in predicates:      
-      if (len(p)<= len(old_action)):
-         str_args="".join(map(str,[""+str(i) for i in range(1,len(old_action))]))
-         for tup in itertools.product(str_args, repeat=(len(p)-1)):
+   for p in predicates:
+      str_args="".join(map(str,[""+str(i) for i in range(1,len(old_action))]))
+      for tup in itertools.product(str_args, repeat=(len(p)-1)):
+         if possible_pred_for_action(p,old_action,tup):             
             disjunction = pddl.conditions.Disjunction([pddl.conditions.NegatedAtom("pre_"+p[0]+"_"+a[0],["var"+str(t) for t in tup])]+[pddl.conditions.Atom(p[0],["?o"+str(t) for t in tup])])
             pre = pre + [disjunction]
       
@@ -203,16 +203,16 @@ for a in old_actions:
       eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("current",["?i2"]))]   
 
    for p in predicates:
-      if (len(p) <= len(old_action)):
-         str_args="".join(map(str,[""+str(i) for i in range(1,len(old_action))]))
-         for tup in itertools.product(str_args, repeat=(len(p)-1)):         
+      str_args="".join(map(str,[""+str(i) for i in range(1,len(old_action))]))
+      for tup in itertools.product(str_args, repeat=(len(p)-1)):
+         if possible_pred_for_action(p,old_action,tup):                         
             condition = pddl.conditions.Conjunction([pddl.conditions.Atom("del_"+p[0]+"_"+a[0],["var"+str(t) for t in tup])])      
             eff = eff + [pddl.effects.Effect([],condition,pddl.conditions.NegatedAtom(p[0],["?o"+str(t) for t in tup]))]
       
    for p in predicates:
-      if (len(p) <= len(old_action)):
-         str_args="".join(map(str,[""+str(i) for i in range(1,len(old_action))]))
-         for tup in itertools.product(str_args, repeat=(len(p)-1)):                  
+      str_args="".join(map(str,[""+str(i) for i in range(1,len(old_action))]))
+      for tup in itertools.product(str_args, repeat=(len(p)-1)):
+         if possible_pred_for_action(p,old_action,tup):                                     
             condition = pddl.conditions.Conjunction([pddl.conditions.Atom("add_"+p[0]+"_"+a[0],["var"+str(t) for t in tup])])
             eff = eff + [pddl.effects.Effect([],condition,pddl.conditions.Atom(p[0],["?o"+str(t) for t in tup]))]
    
