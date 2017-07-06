@@ -1,17 +1,7 @@
 #! /usr/bin/env python
 import glob, os, sys, copy, itertools
 import pddl, pddl_parser
-import fdtask_to_pddl
-
-PLANNER_PATH = "/home/sjimenez/data/software/madagascar/"
-OUTPUT_FILENAME = "sas_plan"
-PLANNER_PARAMS = "-P 2 -S 1 -Q -o "+OUTPUT_FILENAME
-
-# Diferent modes
-INPUT_PLANS = 0
-INPUT_STEPS = 1
-INPUT_LENPLAN = 2
-INPUT_MINIMUM = 3
+import config,fdtask_to_pddl
 
 
 def get_max_steps_from_plans(ps):
@@ -92,7 +82,7 @@ for filename in sorted(glob.glob(domain_folder_name+"/"+plans_prefix_filename+"*
    lcounter = 0
    file = open(filename, 'r')   
    for line in file:
-      if input_level!=INPUT_STEPS or (input_level==INPUT_STEPS and lcounter %3 != 0):
+      if input_level!=config.INPUT_STEPS or (input_level==config.INPUT_STEPS and lcounter %3 != 0):
          plans[i].append(line.replace("\n","").split(": ")[1])
       lcounter = lcounter + 1
    file.close()
@@ -131,7 +121,7 @@ for a in actions: # All possible preconditions are initially programmed
             fd_task.init.append(pddl.conditions.Atom("pre_"+p[0]+"_"+a[0],vars))
             allpres = allpres + [str("pre_"+p[0]+"_"+a[0]+"_"+"_".join(map(str,vars)))]
 
-if input_level <= INPUT_LENPLAN:               
+if input_level <= config.INPUT_LENPLAN:               
    for i in range(1,MAX_STEPS+1):
       fd_task.init.append(pddl.conditions.Atom("next",["i"+str(i),"i"+str(i+1)]))
             
@@ -143,13 +133,13 @@ fd_task.goal=pddl.conditions.Conjunction(goals)
                
 # Compilation Domain
 fd_task.types.append(pddl.pddl_types.Type("var","None"))
-if input_level <= INPUT_LENPLAN:               
+if input_level <= config.INPUT_LENPLAN:               
    fd_task.types.append(pddl.pddl_types.Type("step","None"))
 
 for i in range(1,MAX_VARS+1):
    fd_task.objects.append(pddl.pddl_types.TypedObject("var"+str(i),"var"))
    
-if input_level <= INPUT_LENPLAN:                  
+if input_level <= config.INPUT_LENPLAN:                  
    for i in range(1,MAX_STEPS+2):
       fd_task.objects.append(pddl.pddl_types.TypedObject("i"+str(i),"step"))   
    
@@ -158,7 +148,7 @@ fd_task.predicates.append(pddl.predicates.Predicate("programming2",[]))
 fd_task.predicates.append(pddl.predicates.Predicate("executing",[]))
 for i in range(0,len(plans)):
    fd_task.predicates.append(pddl.predicates.Predicate("test"+str(i+1),[]))
-if input_level <= INPUT_LENPLAN:                  
+if input_level <= config.INPUT_LENPLAN:                  
    fd_task.predicates.append(pddl.predicates.Predicate("current",[pddl.pddl_types.TypedObject("?i","step")]))
    fd_task.predicates.append(pddl.predicates.Predicate("next",[pddl.pddl_types.TypedObject("?i1","step"),pddl.pddl_types.TypedObject("?i2","step")]))
 
@@ -169,7 +159,7 @@ for a in actions:
          fd_task.predicates.append(pddl.predicates.Predicate("del_"+p[0]+"_"+a[0],[pddl.pddl_types.TypedObject("?x"+str(i),"var") for i in range(1,len(p))]))      
          fd_task.predicates.append(pddl.predicates.Predicate("add_"+p[0]+"_"+a[0],[pddl.pddl_types.TypedObject("?x"+str(i),"var") for i in range(1,len(p))]))   
 
-if input_level <= INPUT_STEPS:   
+if input_level <= config.INPUT_STEPS:   
    for a in actions:
       fd_task.predicates.append(pddl.predicates.Predicate("plan-"+a[0],[pddl.pddl_types.TypedObject("?i","step")]+[pddl.pddl_types.TypedObject("?o"+str(i),a[i]) for i in range(1,len(a))]))
    
@@ -178,15 +168,15 @@ old_actions = copy.deepcopy(actions)
 for a in old_actions:
    old_action = copy.deepcopy(a)
    params=[pddl.pddl_types.TypedObject("?o"+str(i),a[i]) for i in range(1,len(a))]
-   if input_level <=INPUT_LENPLAN:                  
+   if input_level <=config.INPUT_LENPLAN and input_level <config.INPUT_MINIMUM:
       params=params+[pddl.pddl_types.TypedObject("?i1","step")]
       params=params+[pddl.pddl_types.TypedObject("?i2","step")]
 
    pre = [pddl.conditions.Atom("executing",[])]
-   if input_level <= INPUT_PLANS:                        
+   if input_level <= config.INPUT_PLANS and input_level <config.INPUT_MINIMUM:
       pre = pre + [pddl.conditions.Atom("plan-"+a[0],["?i1"]+["?o"+str(i) for i in range(1,len(a))])]
       
-   if input_level <= INPUT_LENPLAN:                  
+   if input_level <= config.INPUT_LENPLAN and input_level <config.INPUT_MINIMUM:
       pre = pre + [pddl.conditions.Atom("current",["?i1"])]
       pre = pre + [pddl.conditions.Atom("next",["?i1", "?i2"])]   
    
@@ -198,10 +188,10 @@ for a in old_actions:
             pre = pre + [disjunction]
       
    eff = []
-   if input_level < INPUT_STEPS:
+   if input_level < config.INPUT_STEPS: 
       eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.NegatedAtom("current",["?i1"]))]
       eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("current",["?i2"]))]
-   else:
+   elif input_level <config.INPUT_MINIMUM:
       eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.NegatedAtom("current",["?i1"]))]
       eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("current",["?i2"]))]   
 
@@ -263,10 +253,10 @@ for a in old_actions:
 pre = [pddl.conditions.NegatedAtom("executing",[])]
 
 eff = []
-if input_level <= INPUT_LENPLAN:               
+if input_level <= config.INPUT_LENPLAN:               
    eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("current",["i1"]))]
 
-if input_level <= INPUT_STEPS:
+if input_level <= config.INPUT_STEPS:
    for i in range(0,len(plans[0])):
       action=plans[0][i]
       name=action[1:-1].split(" ")[0]
@@ -285,18 +275,18 @@ for i in range(0,len(plans)):
       else:
          pre = pre + [pddl.conditions.NegatedAtom("test"+str(j+1),[])]
          
-   if input_level <= INPUT_LENPLAN:                        
+   if input_level <= config.INPUT_LENPLAN:                        
       pre = pre + [pddl.conditions.Atom("current",["i"+str(len(plans[i])+1)])]
    for g in fd_tasks[i].goal.parts:
       pre = pre + [g]   
    
    eff = []
    eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("test"+str(i+1),[]))]   
-   if input_level <= INPUT_LENPLAN:                           
+   if input_level <= config.INPUT_LENPLAN:                           
       eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.NegatedAtom("current",["i"+str(len(plans[i])+1)]))]      
       eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("current",["i1"]))]
 
-   if input_level <= INPUT_STEPS:                        
+   if input_level <= config.INPUT_STEPS:                        
       for j in range(0,len(plans[i])):
          name = "plan-"+plans[i][j].replace("(","").replace(")","").split(" ")[0]
          pars = ["i"+str(j+1)]+plans[i][j].replace("(","").replace(")","").split(" ")[1:]
@@ -321,7 +311,7 @@ fdomain.close()
 
 
 # Solving the compilation
-cmd = "rm " + OUTPUT_FILENAME + " planner_out.log;"+PLANNER_PATH+"/M aux_domain.pddl aux_problem.pddl -F "+str(len(plans)+sum([len(p) for p in plans]))+" "+PLANNER_PARAMS+" > planner_out.log"
+cmd = "rm " + config.OUTPUT_FILENAME + " planner_out.log;"+config.PLANNER_PATH+"/M aux_domain.pddl aux_problem.pddl -F "+str(len(plans)+sum([len(p) for p in plans]))+" "+config.PLANNER_PARAMS+" > planner_out.log"
 print("\n\nExecuting... " + cmd)
 os.system(cmd)
 
@@ -329,7 +319,7 @@ os.system(cmd)
 pres = [[] for _ in xrange(len(actions))]
 dels = [[] for _ in xrange(len(actions))]
 adds = [[] for _ in xrange(len(actions))]
-file = open(OUTPUT_FILENAME, 'r')
+file = open(config.OUTPUT_FILENAME, 'r')
 for line in file:   
    keys="(program_pre_"
    if keys in line:

@@ -8,13 +8,14 @@ import fdtask_to_pddl
 # MAIN
 #**************************************#
 try:
-   pass
+   input_level = int(sys.argv[1])
+   
 except:
    print "Usage:"
-   print sys.argv[0] + ""
+   print sys.argv[0] + "<input level (0 plans, 1 steps, 2 len(plan), 3 minimum)>"
    sys.exit(-1)
 
-SOURCES = ["handpicked","FDsolutions"]   
+SOURCES = ["handpicked"]   
 domains= ["blocks", "gripper", "miconic", "visitall"]
 
 str_out = ""
@@ -25,7 +26,7 @@ for s in SOURCES:
       print("\n\nExecuting... " + cmd)
       os.system(cmd)
       
-      cmd = "./compiler.py ../benchmarks/"+s+"/"+d+"/ test plan 0 > " + outdir + "compiler.log"
+      cmd = "./compiler.py ../benchmarks/"+s+"/"+d+"/ test plan "+str(input_level)+" > " + outdir + "compiler.log"
       print("\n\nExecuting... " + cmd)
       os.system(cmd)
 

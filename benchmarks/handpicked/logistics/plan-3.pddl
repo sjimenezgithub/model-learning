@@ -1,5 +1,0 @@
-0: (unload-airplane obj23 apn1 apt1)
-1: (unload-airplane obj21 apn1 apt1)
-2: (drive-truck tru1 pos1 apt1 cit1)
-3: (load-truck obj23 tru1 apt1)
-4: (load-truck obj21 tru1 apt1)

@@ -1,5 +1,0 @@
-0: (board person4 plane1 city1)
-1: (fly plane1 city1 city0 fl6 fl5)
-2: (board person3 plane1 city0)
-3: (board person2 plane1 city0)
-4: (fly plane1 city0 city3 fl5 fl4)
