@@ -108,6 +108,8 @@ predicates = get_predicates_schema_from_plans(fd_task)
 
 
 # Compilation Problem
+init_aux=copy.deepcopy(fd_task.init)
+fd_task.init=[]
 fd_task.init.append(pddl.conditions.Atom("programming1",[]))
 allpres=[]
 for a in actions: # All possible preconditions are initially programmed
@@ -127,8 +129,8 @@ if input_level <= config.INPUT_LENPLAN:
             
 
 goals = []
-for i in range(0,len(plans)):
-   goals = goals + [pddl.conditions.Atom("test"+str(i+1),[""])]
+for i in range(0,len(plans)+1):
+   goals = goals + [pddl.conditions.Atom("test"+str(i),[""])]
 fd_task.goal=pddl.conditions.Conjunction(goals)
                
 # Compilation Domain
@@ -146,8 +148,8 @@ if input_level <= config.INPUT_LENPLAN:
 fd_task.predicates.append(pddl.predicates.Predicate("programming1",[]))
 fd_task.predicates.append(pddl.predicates.Predicate("programming2",[]))
 fd_task.predicates.append(pddl.predicates.Predicate("executing",[]))
-for i in range(0,len(plans)):
-   fd_task.predicates.append(pddl.predicates.Predicate("test"+str(i+1),[]))
+for i in range(0,len(plans)+1):
+   fd_task.predicates.append(pddl.predicates.Predicate("test"+str(i),[]))
 if input_level <= config.INPUT_LENPLAN:                  
    fd_task.predicates.append(pddl.predicates.Predicate("current",[pddl.pddl_types.TypedObject("?i","step")]))
    fd_task.predicates.append(pddl.predicates.Predicate("next",[pddl.pddl_types.TypedObject("?i1","step"),pddl.pddl_types.TypedObject("?i2","step")]))
@@ -252,7 +254,11 @@ for a in old_actions:
 # Actions for programming the tests
 pre = [pddl.conditions.NegatedAtom("executing",[])]
 
-eff = []
+eff = [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("test0",[]))]
+for f in init_aux:
+   if f.predicate!="=":
+      eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),f)]
+
 if input_level <= config.INPUT_LENPLAN:               
    eff = eff + [pddl.effects.Effect([],pddl.conditions.Truth(),pddl.conditions.Atom("current",["i1"]))]
 
@@ -269,11 +275,11 @@ fd_task.actions.append(pddl.actions.Action("test_0",[],0,pddl.conditions.Conjunc
 for i in range(0,len(plans)):   
    pre = []
    pre = pre + [pddl.conditions.Atom("executing",[])]
-   for j in range(0,len(plans)):
-      if j<i:
-         pre = pre + [pddl.conditions.Atom("test"+str(j+1),[])]
+   for j in range(0,len(plans)+1):
+      if j<i+1:
+         pre = pre + [pddl.conditions.Atom("test"+str(j),[])]
       else:
-         pre = pre + [pddl.conditions.NegatedAtom("test"+str(j+1),[])]
+         pre = pre + [pddl.conditions.NegatedAtom("test"+str(j),[])]
          
    if input_level <= config.INPUT_LENPLAN:                        
       pre = pre + [pddl.conditions.Atom("current",["i"+str(len(plans[i])+1)])]
